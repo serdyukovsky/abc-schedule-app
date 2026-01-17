@@ -53,12 +53,12 @@ export function ConflictModal({
               <Feather name="alert-circle" size={24} color={theme.conflict} />
             </View>
             <ThemedText style={[styles.title, { color: theme.text }]}>
-              Time Conflict
+              Конфликт времени
             </ThemedText>
           </View>
 
           <ThemedText style={[styles.message, { color: theme.textSecondary }]}>
-            "{newEvent.title}" overlaps with "{conflictingEvent.title}".
+            Пересекается с «{conflictingEvent.title}».
           </ThemedText>
 
           <View style={styles.actions}>
@@ -66,7 +66,7 @@ export function ConflictModal({
               onPress={handleReplace}
               style={[styles.button, { backgroundColor: theme.link }]}
             >
-              <ThemedText style={styles.buttonTextPrimary}>Replace</ThemedText>
+              <ThemedText style={styles.buttonTextPrimary}>Заменить</ThemedText>
             </Pressable>
 
             <Pressable
@@ -74,13 +74,13 @@ export function ConflictModal({
               style={[styles.button, styles.secondaryButton, { borderColor: theme.separator }]}
             >
               <ThemedText style={[styles.buttonText, { color: theme.text }]}>
-                Keep Both
+                Оставить оба
               </ThemedText>
             </Pressable>
 
             <Pressable onPress={onCancel} style={styles.cancelButton}>
               <ThemedText style={[styles.cancelText, { color: theme.textSecondary }]}>
-                Cancel
+                Отмена
               </ThemedText>
             </Pressable>
           </View>

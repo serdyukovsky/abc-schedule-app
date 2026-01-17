@@ -98,14 +98,14 @@ export function SwipeableEventCard({
       <Animated.View style={[styles.leftAction, { backgroundColor: theme.link }, leftActionStyle]}>
         <Feather name={event.isPlanned ? "x" : "plus"} size={20} color="#FFFFFF" />
         <ThemedText style={styles.actionText}>
-          {event.isPlanned ? "Remove" : "Add"}
+          {event.isPlanned ? "Убрать" : "Добавить"}
         </ThemedText>
       </Animated.View>
 
       <Animated.View style={[styles.rightAction, { backgroundColor: "#FFB800" }, rightActionStyle]}>
         <Feather name="star" size={20} color="#FFFFFF" />
         <ThemedText style={styles.actionText}>
-          {event.isSaved ? "Unsave" : "Save"}
+          {event.isSaved ? "Убрать" : "Сохранить"}
         </ThemedText>
       </Animated.View>
 
@@ -122,26 +122,53 @@ export function SwipeableEventCard({
           ]}
         >
           <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
-                <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>
-                  {event.track}
-                </ThemedText>
-              </View>
-              <View style={styles.headerRight}>
+            <View style={styles.topRow}>
+              <View style={styles.leftContent}>
+                <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
+                  <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>
+                    {event.track}
+                  </ThemedText>
+                </View>
                 {hasConflict ? (
                   <View style={[styles.conflictBadge, { backgroundColor: `${theme.conflict}20` }]}>
                     <ThemedText style={[styles.conflictText, { color: theme.conflict }]}>
-                      Conflict
+                      Конфликт
                     </ThemedText>
                   </View>
                 ) : null}
-                {event.isSaved ? (
-                  <Feather name="star" size={14} color="#FFB800" />
-                ) : null}
-                {event.isPlanned ? (
-                  <Feather name="check-circle" size={14} color={theme.link} />
-                ) : null}
+              </View>
+
+              <View style={styles.iconButtons}>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    handleSave();
+                  }}
+                  style={styles.iconButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  testID={`star-button-${event.id}`}
+                >
+                  <Feather
+                    name="star"
+                    size={20}
+                    color={event.isSaved ? "#FFB800" : theme.textMuted}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation?.();
+                    handleAddToSchedule();
+                  }}
+                  style={styles.iconButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  testID={`add-button-${event.id}`}
+                >
+                  <Feather
+                    name={event.isPlanned ? "check-circle" : "plus-circle"}
+                    size={20}
+                    color={event.isPlanned ? theme.link : theme.textMuted}
+                  />
+                </Pressable>
               </View>
             </View>
 
@@ -211,15 +238,16 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     gap: Spacing.xs,
   },
-  header: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  headerRight: {
+  leftContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+    flex: 1,
   },
   trackBadge: {
     paddingHorizontal: Spacing.sm,
@@ -241,10 +269,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
   },
+  iconButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginLeft: Spacing.sm,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   title: {
     fontSize: 15,
     fontWeight: "600",
     lineHeight: 20,
+    paddingRight: 0,
   },
   speaker: {
     fontSize: 13,

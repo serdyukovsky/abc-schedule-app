@@ -49,7 +49,7 @@ export function TimeSlotRow({
       <View style={[styles.divider, { backgroundColor: theme.separator }]} />
 
       <View style={styles.eventsColumn}>
-        {events.map((event, index) => {
+        {events.map((event) => {
           const isPast = event.endTime < now;
           const isCurrent = event.startTime <= now && event.endTime > now;
           const conflict = hasConflict(event);
@@ -74,10 +74,12 @@ export function TimeSlotRow({
               key={event.id}
               event={event}
               onPress={() => onEventPress(event)}
+              onTogglePlanned={() => onTogglePlanned(event.id)}
+              onToggleSaved={() => onToggleSaved(event.id)}
               isPast={isPast}
               isCurrent={isCurrent}
               hasConflict={!!conflict}
-              compact
+              showActions={true}
             />
           );
         })}

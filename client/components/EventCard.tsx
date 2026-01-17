@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -15,10 +16,12 @@ import { Event } from "@/data/mockEvents";
 interface EventCardProps {
   event: Event;
   onPress: () => void;
+  onTogglePlanned?: () => void;
+  onToggleSaved?: () => void;
   isPast?: boolean;
   isCurrent?: boolean;
   hasConflict?: boolean;
-  compact?: boolean;
+  showActions?: boolean;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -26,10 +29,12 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function EventCard({
   event,
   onPress,
+  onTogglePlanned,
+  onToggleSaved,
   isPast = false,
   isCurrent = false,
   hasConflict = false,
-  compact = false,
+  showActions = true,
 }: EventCardProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -46,6 +51,16 @@ export function EventCard({
     scale.value = withSpring(1, { damping: 15, stiffness: 150 });
   };
 
+  const handleTogglePlanned = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onTogglePlanned?.();
+  };
+
+  const handleToggleSaved = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onToggleSaved?.();
+  };
+
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -58,33 +73,61 @@ export function EventCard({
           opacity: isPast ? 0.5 : 1,
           borderLeftColor: isCurrent ? theme.link : "transparent",
         },
-        compact && styles.compactContainer,
         animatedStyle,
       ]}
       testID={`event-card-${event.id}`}
     >
       <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
-            <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>
-              {event.track}
-            </ThemedText>
-          </View>
-          <View style={styles.headerRight}>
+        <View style={styles.topRow}>
+          <View style={styles.leftContent}>
+            <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
+              <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>
+                {event.track}
+              </ThemedText>
+            </View>
             {hasConflict ? (
               <View style={[styles.conflictBadge, { backgroundColor: `${theme.conflict}20` }]}>
                 <ThemedText style={[styles.conflictText, { color: theme.conflict }]}>
-                  Conflict
+                  Конфликт
                 </ThemedText>
               </View>
             ) : null}
-            {event.isSaved ? (
-              <Feather name="star" size={14} color="#FFB800" />
-            ) : null}
-            {event.isPlanned ? (
-              <Feather name="check-circle" size={14} color={theme.link} />
-            ) : null}
           </View>
+
+          {showActions ? (
+            <View style={styles.iconButtons}>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  handleToggleSaved();
+                }}
+                style={styles.iconButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                testID={`star-button-${event.id}`}
+              >
+                <Feather
+                  name="star"
+                  size={20}
+                  color={event.isSaved ? "#FFB800" : theme.textMuted}
+                />
+              </Pressable>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  handleTogglePlanned();
+                }}
+                style={styles.iconButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                testID={`add-button-${event.id}`}
+              >
+                <Feather
+                  name={event.isPlanned ? "check-circle" : "plus-circle"}
+                  size={20}
+                  color={event.isPlanned ? theme.link : theme.textMuted}
+                />
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         <ThemedText style={[styles.title, { color: theme.text }]} numberOfLines={2}>
@@ -115,23 +158,22 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     borderLeftWidth: 3,
     overflow: "hidden",
-  },
-  compactContainer: {
     marginBottom: Spacing.sm,
   },
   content: {
     padding: Spacing.md,
     gap: Spacing.xs,
   },
-  header: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  headerRight: {
+  leftContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+    flex: 1,
   },
   trackBadge: {
     paddingHorizontal: Spacing.sm,
@@ -152,6 +194,18 @@ const styles = StyleSheet.create({
   conflictText: {
     fontSize: 10,
     fontWeight: "600",
+  },
+  iconButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginLeft: Spacing.sm,
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 15,
