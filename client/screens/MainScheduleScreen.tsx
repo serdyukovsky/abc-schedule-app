@@ -40,7 +40,7 @@ export default function MainScheduleScreen() {
   const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { events, togglePlanned, toggleSaved, hasConflict, getPlannedEvents } = useEvents();
+  const { events, togglePlanned, hasConflict, getPlannedEvents } = useEvents();
 
   const [selectedSegment, setSelectedSegment] = useState(0);
   const [selectedDate, setSelectedDate] = useState(eventDays[0].date);
@@ -249,7 +249,6 @@ export default function MainScheduleScreen() {
               events={slot.events}
               onEventPress={handleEventPress}
               onTogglePlanned={handleTogglePlanned}
-              onToggleSaved={toggleSaved}
               hasConflict={hasConflict}
             />
           </View>
@@ -286,8 +285,7 @@ export default function MainScheduleScreen() {
                   endTime={slot.endTime}
                   events={slot.events}
                   onEventPress={handleEventPress}
-                  onTogglePlanned={togglePlanned}
-                  onToggleSaved={toggleSaved}
+                  onTogglePlanned={handleTogglePlanned}
                   hasConflict={hasConflict}
                   showSwipeActions={false}
                 />
@@ -302,7 +300,7 @@ export default function MainScheduleScreen() {
       ) : (
         <EmptyState
           title="Нет запланированных событий"
-          message="Смахните вправо на событие в расписании, чтобы добавить его сюда."
+          message="Нажмите + на карточке события, чтобы добавить его сюда."
         />
       )}
     </>

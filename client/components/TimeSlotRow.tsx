@@ -14,7 +14,6 @@ interface TimeSlotRowProps {
   events: Event[];
   onEventPress: (event: Event) => void;
   onTogglePlanned: (eventId: string) => void;
-  onToggleSaved: (eventId: string) => void;
   hasConflict: (event: Event) => Event | null;
   showSwipeActions?: boolean;
 }
@@ -25,7 +24,6 @@ export function TimeSlotRow({
   events,
   onEventPress,
   onTogglePlanned,
-  onToggleSaved,
   hasConflict,
   showSwipeActions = true,
 }: TimeSlotRowProps) {
@@ -61,7 +59,6 @@ export function TimeSlotRow({
                 event={event}
                 onPress={() => onEventPress(event)}
                 onTogglePlanned={() => onTogglePlanned(event.id)}
-                onToggleSaved={() => onToggleSaved(event.id)}
                 isPast={isPast}
                 isCurrent={isCurrent}
                 hasConflict={!!conflict}
@@ -75,7 +72,6 @@ export function TimeSlotRow({
               event={event}
               onPress={() => onEventPress(event)}
               onTogglePlanned={() => onTogglePlanned(event.id)}
-              onToggleSaved={() => onToggleSaved(event.id)}
               isPast={isPast}
               isCurrent={isCurrent}
               hasConflict={!!conflict}

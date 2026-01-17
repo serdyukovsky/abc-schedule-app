@@ -10,7 +10,6 @@ export interface Event {
   endTime: Date;
   description: string;
   topics: string[];
-  isSaved: boolean;
   isPlanned: boolean;
 }
 
@@ -37,7 +36,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 10, 0),
     description: "Join us for the opening keynote where we explore the future of business development in the Altai region.",
     topics: ["Regional growth strategies", "Investment opportunities", "2026 business outlook"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -51,7 +49,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 11, 30),
     description: "Learn how to build resilient and sustainable supply chains for modern businesses.",
     topics: ["Green logistics", "Cost optimization", "Risk management"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -65,7 +62,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 12, 0),
     description: "Hands-on workshop on implementing digital transformation in traditional businesses.",
     topics: ["Automation tools", "Cloud migration", "Data analytics"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -79,7 +75,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 13, 30),
     description: "Develop leadership skills that thrive in volatile and uncertain business environments.",
     topics: ["Adaptive leadership", "Team resilience", "Decision making"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -93,7 +88,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 14, 30),
     description: "Enjoy lunch and connect with fellow attendees.",
     topics: [],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -107,7 +101,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 15, 30),
     description: "Explore current venture capital trends and opportunities in the region.",
     topics: ["Startup funding", "Due diligence", "Exit strategies"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -121,7 +114,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 15, 30),
     description: "Master digital marketing strategies for business growth.",
     topics: ["Social media", "Content marketing", "Analytics"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -135,7 +127,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day1, 17, 0),
     description: "A panel discussion featuring successful women entrepreneurs and executives.",
     topics: ["Gender equality", "Career growth", "Work-life balance"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -149,7 +140,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 10, 0),
     description: "How to build and nurture innovation ecosystems in regional economies.",
     topics: ["Startup ecosystems", "University partnerships", "Government support"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -163,7 +153,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 12, 0),
     description: "Comprehensive financial planning strategies for growing businesses.",
     topics: ["Cash flow management", "Investment planning", "Risk assessment"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -177,7 +166,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 11, 30),
     description: "Practical applications of AI in everyday business operations.",
     topics: ["Process automation", "Predictive analytics", "Customer service AI"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -191,7 +179,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 13, 30),
     description: "Implementing sustainable practices that benefit both business and environment.",
     topics: ["Carbon footprint", "Circular economy", "ESG reporting"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -205,7 +192,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 14, 30),
     description: "Themed roundtable discussions over lunch.",
     topics: [],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -219,7 +205,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 15, 30),
     description: "Strategies for scaling your startup from regional to national presence.",
     topics: ["Growth hacking", "Team building", "Fundraising"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -233,7 +218,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day2, 19, 0),
     description: "Evening networking reception with refreshments.",
     topics: [],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -247,7 +231,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day3, 10, 0),
     description: "Accessing global markets from the Altai region.",
     topics: ["Export strategies", "International partnerships", "Trade regulations"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -261,7 +244,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day3, 11, 30),
     description: "Modern HR strategies for attracting and retaining talent.",
     topics: ["Remote work policies", "Employee engagement", "Talent development"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -275,7 +257,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day3, 11, 30),
     description: "Essential cybersecurity practices for businesses of all sizes.",
     topics: ["Data protection", "Threat prevention", "Compliance"],
-    isSaved: false,
     isPlanned: false,
   },
   {
@@ -290,7 +271,6 @@ export const mockEvents: Event[] = [
     endTime: createDate(day3, 16, 30),
     description: "Closing ceremony with awards for outstanding contributions.",
     topics: ["Award presentations", "Closing remarks", "Future announcements"],
-    isSaved: false,
     isPlanned: false,
   },
 ];

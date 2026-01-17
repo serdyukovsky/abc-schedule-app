@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRoute, useNavigation, RouteProp } from "@react-navigation/native";
+import { useRoute, RouteProp } from "@react-navigation/native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
@@ -17,8 +17,7 @@ export default function EventDetailsScreen() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const route = useRoute<EventDetailsRouteProp>();
-  const navigation = useNavigation();
-  const { events, togglePlanned, toggleSaved, hasConflict } = useEvents();
+  const { events, togglePlanned, hasConflict } = useEvents();
 
   const { eventId } = route.params;
   const event = events.find((e) => e.id === eventId);
@@ -63,11 +62,6 @@ export default function EventDetailsScreen() {
   const handleTogglePlanned = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     togglePlanned(event.id);
-  };
-
-  const handleToggleSaved = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleSaved(event.id);
   };
 
   return (

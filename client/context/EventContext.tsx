@@ -5,9 +5,7 @@ import { Event, mockEvents } from "@/data/mockEvents";
 interface EventContextType {
   events: Event[];
   togglePlanned: (eventId: string) => void;
-  toggleSaved: (eventId: string) => void;
   getPlannedEvents: () => Event[];
-  getSavedEvents: () => Event[];
   hasConflict: (event: Event) => Event | null;
   isLoading: boolean;
 }
@@ -28,11 +26,10 @@ export function EventProvider({ children }: { children: ReactNode }) {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const savedState: { [id: string]: { isSaved: boolean; isPlanned: boolean } } = JSON.parse(stored);
+        const savedState: { [id: string]: { isPlanned: boolean } } = JSON.parse(stored);
         setEvents(prevEvents =>
           prevEvents.map(event => ({
             ...event,
-            isSaved: savedState[event.id]?.isSaved ?? event.isSaved,
             isPlanned: savedState[event.id]?.isPlanned ?? event.isPlanned,
           }))
         );
@@ -46,9 +43,9 @@ export function EventProvider({ children }: { children: ReactNode }) {
 
   const saveEventsState = async (updatedEvents: Event[]) => {
     try {
-      const stateToSave: { [id: string]: { isSaved: boolean; isPlanned: boolean } } = {};
+      const stateToSave: { [id: string]: { isPlanned: boolean } } = {};
       updatedEvents.forEach(event => {
-        stateToSave[event.id] = { isSaved: event.isSaved, isPlanned: event.isPlanned };
+        stateToSave[event.id] = { isPlanned: event.isPlanned };
       });
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
     } catch (error) {
@@ -66,24 +63,10 @@ export function EventProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const toggleSaved = (eventId: string) => {
-    setEvents(prevEvents => {
-      const updated = prevEvents.map(event =>
-        event.id === eventId ? { ...event, isSaved: !event.isSaved } : event
-      );
-      saveEventsState(updated);
-      return updated;
-    });
-  };
-
   const getPlannedEvents = () => {
     return events
       .filter(event => event.isPlanned)
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-  };
-
-  const getSavedEvents = () => {
-    return events.filter(event => event.isSaved);
   };
 
   const hasConflict = (event: Event): Event | null => {
@@ -106,9 +89,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       value={{
         events,
         togglePlanned,
-        toggleSaved,
         getPlannedEvents,
-        getSavedEvents,
         hasConflict,
         isLoading,
       }}
