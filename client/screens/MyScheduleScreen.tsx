@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback } from "react";
-import { View, StyleSheet, SectionList } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -9,14 +9,26 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
 import { Spacing } from "@/constants/theme";
-import { EventCard } from "@/components/EventCard";
-import { TimeLabel } from "@/components/TimeLabel";
+import { TimeSlotRow } from "@/components/TimeSlotRow";
 import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
+import { ThemedText } from "@/components/ThemedText";
 import { Event } from "@/data/mockEvents";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface DaySection {
+  date: Date;
+  dateLabel: string;
+  slots: TimeSlot[];
+}
+
+interface TimeSlot {
+  time: string;
+  endTime?: string;
+  events: Event[];
+}
 
 export default function MyScheduleScreen() {
   const insets = useSafeAreaInsets();
@@ -38,55 +50,71 @@ export default function MyScheduleScreen() {
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
-      weekday: "short",
+      weekday: "long",
       month: "short",
       day: "numeric",
     });
   };
 
-  const sections = useMemo(() => {
-    const grouped: { [key: string]: Event[] } = {};
+  const getDateKey = (date: Date) => {
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  };
+
+  const daySections = useMemo(() => {
+    const byDay: { [key: string]: Event[] } = {};
     
     plannedEvents.forEach((event) => {
-      const dateKey = formatDate(event.startTime);
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
+      const dayKey = getDateKey(event.startTime);
+      if (!byDay[dayKey]) {
+        byDay[dayKey] = [];
       }
-      grouped[dateKey].push(event);
+      byDay[dayKey].push(event);
     });
 
-    return Object.keys(grouped).map((date) => ({
-      title: date,
-      data: grouped[date],
-    }));
+    const sections: DaySection[] = [];
+
+    Object.keys(byDay)
+      .sort()
+      .forEach((dayKey) => {
+        const dayEvents = byDay[dayKey];
+        const grouped: { [key: string]: Event[] } = {};
+
+        dayEvents.forEach((event) => {
+          const timeKey = formatTime(event.startTime);
+          if (!grouped[timeKey]) {
+            grouped[timeKey] = [];
+          }
+          grouped[timeKey].push(event);
+        });
+
+        const slots: TimeSlot[] = Object.keys(grouped)
+          .sort()
+          .map((time) => {
+            const slotEvents = grouped[time];
+            const latestEndTime = slotEvents.reduce((latest, event) => {
+              return event.endTime > latest ? event.endTime : latest;
+            }, slotEvents[0].endTime);
+            
+            return {
+              time,
+              endTime: formatTime(latestEndTime),
+              events: slotEvents,
+            };
+          });
+
+        sections.push({
+          date: dayEvents[0].startTime,
+          dateLabel: formatDate(dayEvents[0].startTime),
+          slots,
+        });
+      });
+
+    return sections;
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
     navigation.navigate("EventDetails", { eventId: event.id });
   }, [navigation]);
-
-  const renderItem = useCallback(({ item }: { item: Event }) => {
-    const now = new Date();
-    const isPast = item.endTime < now;
-    const isCurrent = item.startTime <= now && item.endTime > now;
-    const conflict = hasConflict(item);
-
-    return (
-      <EventCard
-        event={item}
-        onPress={() => handleEventPress(item)}
-        onTogglePlanned={() => togglePlanned(item.id)}
-        onToggleSaved={() => toggleSaved(item.id)}
-        isPast={isPast}
-        isCurrent={isCurrent}
-        conflictWith={conflict}
-      />
-    );
-  }, [handleEventPress, togglePlanned, toggleSaved, hasConflict]);
-
-  const renderSectionHeader = useCallback(({ section }: { section: { title: string } }) => {
-    return <TimeLabel time={section.title} />;
-  }, []);
 
   const hasEventsToday = plannedEvents.some((event) => {
     const today = new Date();
@@ -99,31 +127,57 @@ export default function MyScheduleScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      {hasEventsToday ? (
-        <View style={{ paddingTop: headerHeight }}>
-          <NowIndicator />
-        </View>
-      ) : null}
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        stickySectionHeadersEnabled
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={{
-          paddingTop: hasEventsToday ? 0 : headerHeight + Spacing.xl,
+          paddingTop: headerHeight + Spacing.lg,
           paddingBottom: tabBarHeight + Spacing.xl,
           flexGrow: 1,
         }}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
-        ListEmptyComponent={
+        showsVerticalScrollIndicator={false}
+      >
+        {hasEventsToday ? <NowIndicator /> : null}
+
+        {daySections.length > 0 ? (
+          daySections.map((section, sectionIndex) => (
+            <View key={section.dateLabel}>
+              <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
+                <ThemedText style={[styles.dateLabel, { color: theme.text }]}>
+                  {section.dateLabel}
+                </ThemedText>
+              </View>
+
+              {section.slots.map((slot, slotIndex) => (
+                <View key={slot.time}>
+                  {slotIndex > 0 ? (
+                    <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} />
+                  ) : null}
+                  <TimeSlotRow
+                    time={slot.time}
+                    endTime={slot.endTime}
+                    events={slot.events}
+                    onEventPress={handleEventPress}
+                    onTogglePlanned={togglePlanned}
+                    onToggleSaved={toggleSaved}
+                    hasConflict={hasConflict}
+                    showSwipeActions={false}
+                  />
+                </View>
+              ))}
+
+              {sectionIndex < daySections.length - 1 ? (
+                <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} />
+              ) : null}
+            </View>
+          ))
+        ) : (
           <EmptyState
             title="No Events Planned"
-            message="Browse the schedule and add sessions you want to attend."
+            message="Swipe right on events in the Schedule tab to add them here."
           />
-        }
-      />
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -131,5 +185,26 @@ export default function MyScheduleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  dateHeader: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  dateLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  slotDivider: {
+    height: 1,
+    marginLeft: 72 + Spacing.lg,
+    marginRight: Spacing.lg,
+  },
+  sectionDivider: {
+    height: 8,
+    marginVertical: Spacing.md,
   },
 });

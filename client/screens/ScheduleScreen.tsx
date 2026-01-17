@@ -1,25 +1,30 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, SectionList, Pressable } from "react-native";
+import { View, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
 
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
 import { Spacing } from "@/constants/theme";
-import { EventCard } from "@/components/EventCard";
 import { FilterChips } from "@/components/FilterChips";
 import { DateSelector } from "@/components/DateSelector";
-import { TimeLabel } from "@/components/TimeLabel";
+import { TimeSlotRow } from "@/components/TimeSlotRow";
 import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
+import { ConflictModal } from "@/components/ConflictModal";
 import { Event, eventDays, tracks } from "@/data/mockEvents";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+interface TimeSlot {
+  time: string;
+  endTime?: string;
+  events: Event[];
+}
 
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
@@ -27,10 +32,13 @@ export default function ScheduleScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { events, togglePlanned, toggleSaved, hasConflict } = useEvents();
+  const { events, togglePlanned, toggleSaved, hasConflict, getPlannedEvents } = useEvents();
 
   const [selectedDate, setSelectedDate] = useState(eventDays[0].date);
   const [selectedTrack, setSelectedTrack] = useState("All");
+  const [conflictModalVisible, setConflictModalVisible] = useState(false);
+  const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
+  const [conflictingEvent, setConflictingEvent] = useState<Event | null>(null);
 
   const isSameDay = (d1: Date, d2: Date) => {
     return (
@@ -61,7 +69,7 @@ export default function ScheduleScreen() {
     });
   }, [events, selectedDate, selectedTrack]);
 
-  const sections = useMemo(() => {
+  const timeSlots = useMemo(() => {
     const grouped: { [key: string]: Event[] } = {};
     
     filteredEvents.forEach((event) => {
@@ -72,40 +80,69 @@ export default function ScheduleScreen() {
       grouped[timeKey].push(event);
     });
 
-    return Object.keys(grouped)
+    const slots: TimeSlot[] = Object.keys(grouped)
       .sort()
-      .map((time) => ({
-        title: time,
-        data: grouped[time],
-      }));
+      .map((time) => {
+        const slotEvents = grouped[time];
+        const latestEndTime = slotEvents.reduce((latest, event) => {
+          return event.endTime > latest ? event.endTime : latest;
+        }, slotEvents[0].endTime);
+        
+        return {
+          time,
+          endTime: formatTime(latestEndTime),
+          events: slotEvents,
+        };
+      });
+
+    return slots;
   }, [filteredEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
     navigation.navigate("EventDetails", { eventId: event.id });
   }, [navigation]);
 
-  const renderItem = useCallback(({ item }: { item: Event }) => {
-    const now = new Date();
-    const isPast = item.endTime < now;
-    const isCurrent = item.startTime <= now && item.endTime > now;
-    const conflict = hasConflict(item);
+  const handleTogglePlanned = useCallback((eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
 
-    return (
-      <EventCard
-        event={item}
-        onPress={() => handleEventPress(item)}
-        onTogglePlanned={() => togglePlanned(item.id)}
-        onToggleSaved={() => toggleSaved(item.id)}
-        isPast={isPast}
-        isCurrent={isCurrent}
-        conflictWith={conflict}
-      />
-    );
-  }, [handleEventPress, togglePlanned, toggleSaved, hasConflict]);
+    if (!event.isPlanned) {
+      const conflict = hasConflict(event);
+      if (conflict) {
+        setPendingEvent(event);
+        setConflictingEvent(conflict);
+        setConflictModalVisible(true);
+        return;
+      }
+    }
 
-  const renderSectionHeader = useCallback(({ section }: { section: { title: string } }) => {
-    return <TimeLabel time={section.title} />;
-  }, []);
+    togglePlanned(eventId);
+  }, [events, hasConflict, togglePlanned]);
+
+  const handleReplace = () => {
+    if (pendingEvent && conflictingEvent) {
+      togglePlanned(conflictingEvent.id);
+      togglePlanned(pendingEvent.id);
+    }
+    setConflictModalVisible(false);
+    setPendingEvent(null);
+    setConflictingEvent(null);
+  };
+
+  const handleKeepBoth = () => {
+    if (pendingEvent) {
+      togglePlanned(pendingEvent.id);
+    }
+    setConflictModalVisible(false);
+    setPendingEvent(null);
+    setConflictingEvent(null);
+  };
+
+  const handleCancelConflict = () => {
+    setConflictModalVisible(false);
+    setPendingEvent(null);
+    setConflictingEvent(null);
+  };
 
   const showNowIndicator = isToday(selectedDate);
 
@@ -119,26 +156,41 @@ export default function ScheduleScreen() {
         />
       </View>
 
-      {showNowIndicator ? <NowIndicator /> : null}
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        stickySectionHeadersEnabled
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={{
           paddingBottom: tabBarHeight + 80,
           flexGrow: 1,
         }}
         scrollIndicatorInsets={{ bottom: insets.bottom }}
-        ListEmptyComponent={
+        showsVerticalScrollIndicator={false}
+      >
+        {showNowIndicator ? <NowIndicator /> : null}
+
+        {timeSlots.length > 0 ? (
+          timeSlots.map((slot, index) => (
+            <View key={slot.time}>
+              {index > 0 ? (
+                <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} />
+              ) : null}
+              <TimeSlotRow
+                time={slot.time}
+                endTime={slot.endTime}
+                events={slot.events}
+                onEventPress={handleEventPress}
+                onTogglePlanned={handleTogglePlanned}
+                onToggleSaved={toggleSaved}
+                hasConflict={hasConflict}
+              />
+            </View>
+          ))
+        ) : (
           <EmptyState
             title="No Events"
             message={`No events scheduled for this day${selectedTrack !== "All" ? ` in ${selectedTrack}` : ""}.`}
           />
-        }
-      />
+        )}
+      </ScrollView>
 
       <View style={{ paddingBottom: tabBarHeight }}>
         <DateSelector
@@ -147,6 +199,15 @@ export default function ScheduleScreen() {
           onSelect={setSelectedDate}
         />
       </View>
+
+      <ConflictModal
+        visible={conflictModalVisible}
+        newEvent={pendingEvent}
+        conflictingEvent={conflictingEvent}
+        onReplace={handleReplace}
+        onKeepBoth={handleKeepBoth}
+        onCancel={handleCancelConflict}
+      />
     </View>
   );
 }
@@ -154,5 +215,13 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  slotDivider: {
+    height: 1,
+    marginLeft: 72 + Spacing.lg,
+    marginRight: Spacing.lg,
   },
 });

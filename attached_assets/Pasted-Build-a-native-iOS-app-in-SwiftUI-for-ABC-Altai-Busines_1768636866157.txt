@@ -1,0 +1,115 @@
+Build a native iOS app in SwiftUI for “ABC — Altai Business Camp”.
+The main requirement: the Schedule must clearly show parallel events happening at the same start time.
+We must replicate the timeline UX from common event apps:
+- Time labels on the left column
+- A vertical list of “time slots”
+- Each time slot contains 1..N event cards stacked vertically
+- If at 14:50 there are 2 events, the UI must visually look like:
+  [14:50] | [Event card A]
+          | [Event card B]
+So users instantly understand: “multiple options at the same time”.
+
+Tech:
+- SwiftUI, MVVM
+- Local storage (UserDefaults) for favorites / planned events
+- No backend required now
+
+Design (iOS HIG):
+- Minimalist, calm, productivity style
+- System font, light theme + system dark mode
+- No shadows, no gradients, no decorative backgrounds
+- Use thin dividers and spacing for hierarchy
+- Large tap targets
+
+APP NAV:
+- Top segmented control: “Schedule” / “My Schedule”
+- Bottom horizontal date selector (days of event)
+- Top horizontal filter chips by Track (Track = Theme)
+- Search icon (optional stub)
+
+-----------------------
+SCHEDULE SCREEN (KEY)
+-----------------------
+Data presentation must be "Time Slot Timeline":
+
+1) Left column:
+- Fixed width ~56-64pt
+- Shows start time for each slot (e.g., 09:30)
+- Time label aligned to the top of the slot content
+- Optionally show end time in smaller text under it (like 09:30 / 10:30), but start time must be dominant
+
+2) Right column:
+- For each time slot, render a vertical stack of event cards (1..N)
+- Cards in the same slot must be visually grouped (same slot container)
+- Small vertical gap between cards in the same slot
+- Bigger gap between different time slots
+- The slot container should span the height of its cards so the time label clearly maps to them
+
+3) Each event card (compact and scannable):
+- Title (bold)
+- Speaker name (secondary)
+- Track label (small)
+- Location (small, right-aligned or bottom line)
+- Favorite star icon on the right
+- Tapping the card opens Event Details
+- No primary “Add” button on the card (keep it clean)
+- Use swipe actions:
+  - Swipe right/left: “Add to My Schedule” and “Favorite”
+This keeps the timeline clean like the reference screenshots.
+
+4) “Now” indicator:
+- If selected date is today, show a thin horizontal line across the timeline at current time position OR at least highlight the nearest upcoming slot.
+Keep it minimal.
+
+5) Filtering:
+- Track chips filter which events are visible
+- Filtering must not break the time-slot structure: empty slots should be hidden
+
+-----------------------
+MY SCHEDULE SCREEN
+-----------------------
+Same timeline time-slot UI (same left time column).
+But show only planned events (or favorites depending on toggle).
+Must support:
+- Conflict detection: if two planned events overlap, show a conflict badge “Conflict”
+- Past events muted
+- Upcoming highlighted
+
+Decision support:
+- If a user tries to add a planned event that overlaps another planned event, show a lightweight confirmation sheet:
+  “This overlaps with <Event A>. Replace / Keep both / Cancel”
+
+-----------------------
+EVENT DETAILS
+-----------------------
+Minimal details page:
+- Title + optional subtitle
+- Speaker block (photo, name, role/company)
+- Track, Location, Date & time
+- Section “What you will get” (short value sentence)
+- Bullet list
+Primary CTA:
+- “Add to My Schedule” / “Remove”
+Secondary:
+- “Favorite”
+
+DATA MODEL
+- Event: id, title, subtitle?, speakerName, speakerRole?, track, location, day/date, startDateTime, endDateTime, description, bullets[]
+- Group events by startDateTime into slots
+- Also handle events with same start time but different durations
+
+IMPLEMENTATION REQUIREMENTS
+- Implement a proper TimeSlot grouping function:
+  group by (day + startTime)
+- SwiftUI layout must be two-column:
+  HStack(alignment: .top):
+    - left time column
+    - right slot content (VStack of EventCard)
+- Use LazyVStack for performance
+- Provide mock data with examples where 2-3 events share the same start time
+
+Deliver:
+- Runnable SwiftUI app
+- Clean component structure:
+  TimeSlotRow, EventCardView, TrackChipsView, DatePickerStrip
+- Local persistence for favorites & planned events
