@@ -1,25 +1,24 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-
-import ProfileScreen from "@/screens/ProfileScreen";
+import MyScheduleScreen from "@/screens/MyScheduleScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
-export type ProfileStackParamList = {
-  Profile: undefined;
+export type MyScheduleStackParamList = {
+  MySchedule: undefined;
 };
 
-const Stack = createNativeStackNavigator<ProfileStackParamList>();
+const Stack = createNativeStackNavigator<MyScheduleStackParamList>();
 
-export default function ProfileStackNavigator() {
+export default function MyScheduleStackNavigator() {
   const screenOptions = useScreenOptions();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="MySchedule"
+        component={MyScheduleScreen}
         options={{
-          title: "Profile",
+          title: "My Schedule",
         }}
       />
     </Stack.Navigator>
