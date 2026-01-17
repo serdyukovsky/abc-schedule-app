@@ -26,7 +26,7 @@ export default function EventDetailsScreen() {
   if (!event) {
     return (
       <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-        <ThemedText>Event not found</ThemedText>
+        <ThemedText>Событие не найдено</ThemedText>
       </View>
     );
   }
@@ -42,7 +42,7 @@ export default function EventDetailsScreen() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("ru-RU", {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -53,11 +53,11 @@ export default function EventDetailsScreen() {
     const diff = event.endTime.getTime() - event.startTime.getTime();
     const minutes = Math.round(diff / 60000);
     if (minutes < 60) {
-      return `${minutes} min`;
+      return `${minutes} мин`;
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}ч ${remainingMinutes}мин` : `${hours}ч`;
   };
 
   const handleTogglePlanned = () => {
@@ -138,7 +138,7 @@ export default function EventDetailsScreen() {
           <View style={[styles.conflictBanner, { backgroundColor: `${theme.conflict}15` }]}>
             <Feather name="alert-circle" size={16} color={theme.conflict} />
             <ThemedText style={[styles.conflictText, { color: theme.conflict }]}>
-              Conflicts with "{conflict.title}"
+              Конфликт с «{conflict.title}»
             </ThemedText>
           </View>
         ) : null}
@@ -154,7 +154,7 @@ export default function EventDetailsScreen() {
         {event.topics.length > 0 ? (
           <View style={styles.topicsSection}>
             <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-              What you will get
+              Что вы получите
             </ThemedText>
             {event.topics.map((topic, index) => (
               <View key={index} style={styles.topicRow}>
@@ -199,7 +199,7 @@ export default function EventDetailsScreen() {
               { color: event.isPlanned ? theme.text : "#FFFFFF" },
             ]}
           >
-            {event.isPlanned ? "Added to My Schedule" : "Add to My Schedule"}
+            {event.isPlanned ? "Добавлено" : "Добавить в моё расписание"}
           </ThemedText>
         </Pressable>
       </View>

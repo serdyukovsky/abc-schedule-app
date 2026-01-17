@@ -1,5 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -19,7 +20,7 @@ interface DateSelectorProps {
 }
 
 export function DateSelector({ dates, selectedDate, onSelect }: DateSelectorProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
 
   const handleSelect = (date: Date) => {
     Haptics.selectionAsync();
@@ -34,76 +35,142 @@ export function DateSelector({ dates, selectedDate, onSelect }: DateSelectorProp
     );
   };
 
-  return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot, borderTopColor: theme.separator }]}>
-      <View style={styles.innerContainer}>
-        {dates.map((dateOption, index) => {
-          const isSelected = isSameDay(dateOption.date, selectedDate);
-          return (
-            <Pressable
-              key={index}
-              onPress={() => handleSelect(dateOption.date)}
-              style={[
-                styles.dateButton,
+  const content = (
+    <View style={styles.innerContainer}>
+      {dates.map((dateOption, index) => {
+        const isSelected = isSameDay(dateOption.date, selectedDate);
+        return (
+          <Pressable
+            key={index}
+            onPress={() => handleSelect(dateOption.date)}
+            style={[
+              styles.dateButton,
+              isSelected && [
+                styles.selectedDateButton,
                 {
-                  backgroundColor: isSelected ? theme.text : "transparent",
+                  backgroundColor: isDark
+                    ? "rgba(255, 255, 255, 0.18)"
+                    : "rgba(255, 255, 255, 0.85)",
+                },
+              ],
+            ]}
+            testID={`date-selector-${index}`}
+          >
+            <ThemedText
+              style={[
+                styles.dayNumber,
+                {
+                  color: isSelected
+                    ? theme.text
+                    : isDark
+                    ? "rgba(255, 255, 255, 0.7)"
+                    : "rgba(0, 0, 0, 0.7)",
                 },
               ]}
-              testID={`date-selector-${index}`}
             >
-              <ThemedText
-                style={[
-                  styles.dayNumber,
-                  {
-                    color: isSelected ? theme.backgroundRoot : theme.text,
-                  },
-                ]}
-              >
-                {dateOption.date.getDate()}
-              </ThemedText>
-              <ThemedText
-                style={[
-                  styles.dayLabel,
-                  {
-                    color: isSelected ? theme.backgroundRoot : theme.textSecondary,
-                  },
-                ]}
-              >
-                {dateOption.shortLabel}
-              </ThemedText>
-            </Pressable>
-          );
-        })}
+              {dateOption.date.getDate()}
+            </ThemedText>
+            <ThemedText
+              style={[
+                styles.dayLabel,
+                {
+                  color: isSelected
+                    ? theme.textSecondary
+                    : isDark
+                    ? "rgba(255, 255, 255, 0.5)"
+                    : "rgba(0, 0, 0, 0.5)",
+                },
+              ]}
+            >
+              {dateOption.shortLabel}
+            </ThemedText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  if (Platform.OS === "ios") {
+    return (
+      <View style={styles.outerContainer}>
+        <BlurView
+          intensity={80}
+          tint={isDark ? "dark" : "light"}
+          style={[
+            styles.blurContainer,
+            {
+              borderColor: isDark
+                ? "rgba(255, 255, 255, 0.12)"
+                : "rgba(0, 0, 0, 0.08)",
+            },
+          ]}
+        >
+          {content}
+        </BlurView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.outerContainer}>
+      <View
+        style={[
+          styles.blurContainer,
+          styles.androidContainer,
+          {
+            backgroundColor: isDark
+              ? "rgba(45, 45, 48, 0.95)"
+              : "rgba(255, 255, 255, 0.95)",
+            borderColor: isDark
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.06)",
+          },
+        ]}
+      >
+        {content}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingVertical: Spacing.sm,
+  outerContainer: {
     paddingHorizontal: Spacing.lg,
-    borderTopWidth: 1,
+    paddingBottom: Spacing.sm,
+  },
+  blurContainer: {
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  androidContainer: {
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   innerContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: Spacing.md,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
   },
   dateButton: {
     alignItems: "center",
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.lg,
-    minWidth: 60,
+    borderRadius: 14,
+    minWidth: 56,
+  },
+  selectedDateButton: {
+    borderRadius: 14,
   },
   dayNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
-    lineHeight: 24,
+    lineHeight: 22,
   },
   dayLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "500",
     marginTop: 2,
   },
