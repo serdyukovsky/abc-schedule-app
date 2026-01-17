@@ -1,0 +1,139 @@
+Build a native iOS application using SwiftUI for a business event called
+“ABC — Altai Business Camp”.
+
+The app must be simple, minimalist, fast, and focused on usability.
+No decorative UI, no gradients, no visual noise.
+This is a productivity / agenda app, not a festival or social app.
+
+Platform & tech:
+- iOS only
+- SwiftUI
+- MVVM architecture
+- Clean, readable, production-ready code
+- Local state (no backend required for now)
+- Prepared for future API integration
+
+Design system:
+- Apple Human Interface Guidelines
+- Light theme by default, system dark mode supported
+- System fonts (SF Pro)
+- White / near-white background
+- One accent color for actions (used sparingly)
+- Clear spacing, strong typography hierarchy
+- Large tap targets, accessible UI
+
+App structure:
+- Tab-based navigation
+- Two main tabs:
+  1. Schedule
+  2. My Schedule
+
+--------------------------------
+SCREEN 1: Schedule (default tab)
+--------------------------------
+Purpose: browse all events and quickly decide what to attend.
+
+UI:
+- Vertical time-based list (timeline feeling)
+- Events grouped by start time
+- Multiple events can start at the same time (parallel tracks)
+- Sticky time labels (e.g. 09:30, 10:30)
+- Thin “Now” indicator line when current day is selected
+
+Top bar:
+- App title: “ABC”
+- Segmented control:
+  - Schedule
+  - My Schedule
+- Search icon
+- Horizontal scrollable filter chips by track/theme
+
+Event card:
+- Title (primary, bold)
+- Speaker name (secondary)
+- Track / theme (small label, used for filtering)
+- Location
+- Time range (e.g. 09:30–10:30)
+- Primary action button: “Add to My Schedule”
+- Secondary action: star/save
+- Clean card with subtle separator, no shadows
+
+Bottom:
+- Horizontal date selector (days of the event)
+
+--------------------------------
+SCREEN 2: My Schedule
+--------------------------------
+Purpose: personal agenda and decision support.
+
+UI:
+- Timeline with only selected events
+- Same visual structure as Schedule (no relearning)
+- Past events muted
+- Current event highlighted
+- Upcoming event visually emphasized
+
+Logic:
+- Detect time conflicts
+- Show visual warning for overlapping events
+- Show text hint: “Conflicts with another session”
+- Allow removing or replacing events easily
+
+--------------------------------
+SCREEN 3: Event Details
+--------------------------------
+Purpose: help user decide quickly.
+
+Layout:
+- Title (clear, readable, no long lines)
+- Optional subtitle
+- Speaker block:
+  - Photo
+  - Name
+  - Role / company
+- Track / theme
+- Location
+- Date, time, duration
+
+Primary CTA:
+- “Add to My Schedule” / “Remove from My Schedule”
+
+Content:
+- Short section: “What you will get”
+- Bullet list of key topics
+- Clean typography, no long paragraphs
+
+--------------------------------
+Data model:
+- Event
+  - id
+  - title
+  - subtitle (optional)
+  - speakerName
+  - speakerRole
+  - track
+  - location
+  - startTime
+  - endTime
+  - description
+  - isSaved
+  - isPlanned
+
+Behavior:
+- Adding to My Schedule checks for time conflicts
+- Star = “interested”
+- Planned = “I will attend”
+- State persists locally
+
+UX principles:
+- One primary action per screen
+- No unnecessary animations
+- Fast launch and fast scrolling
+- Designed for frequent short checks during the event
+- Feels like a personal assistant, not a feed
+
+Deliver:
+- Fully runnable SwiftUI iOS app
+- Clear folder structure
+- Reusable components (EventCard, TimelineView, FilterChips)
+- Sample mock data for several days
