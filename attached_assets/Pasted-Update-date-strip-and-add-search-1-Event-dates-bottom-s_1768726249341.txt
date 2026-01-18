@@ -1,0 +1,45 @@
+Update date strip and add search:
+
+1) Event dates (bottom strip)
+- The event runs from April 20 to April 24.
+- The bottom horizontal date selector MUST show exactly 5 dates:
+  Apr 20, Apr 21, Apr 22, Apr 23, Apr 24
+- Default selected date: Apr 20 (or the nearest upcoming day if you implement “today” logic).
+- The date selector is the same floating “liquid glass” pill (ultraThinMaterial) as before.
+
+2) Search icon inside the same bottom glass bar
+- On the right side of the date chips, add a search icon button (magnifying glass).
+- It must match the same “glass” style (no separate floating button).
+- Layout: [date chips horizontally scrollable] + spacer + [search icon button] inside the same pill container.
+- Search button tap target >= 44x44pt.
+
+3) Search UX (must appear above the keyboard)
+- When user taps the search icon:
+  - Present a search UI where the text field appears attached above the keyboard.
+  - Use SwiftUI .searchable where possible (preferred), or a custom bottom input bar above the keyboard.
+- The search should filter the currently selected day’s events in real time.
+
+4) Search behavior
+- Search query must match (case-insensitive, partial match) across:
+  - event.title
+  - event.speakerName
+  - event.location (venue/place)
+- If you also store track/theme, include it too (optional).
+
+5) Results presentation
+- While searching, keep the same timeline time-slot layout.
+- Hide empty time slots after filtering.
+- Provide an empty state message:
+  “Ничего не найдено”
+
+Implementation notes (SwiftUI):
+- Prefer:
+  .searchable(text: $query, placement: .toolbar, prompt: "Поиск по названию, спикеру, площадке")
+  and programmatically focus it after tapping the search icon.
+- If you can’t focus .searchable reliably, present a sheet with a search field and results,
+  but the search field must be immediately focused and the keyboard visible.
+- The search icon must toggle a boolean (isSearching) and set focus to the search field.
+
+Data:
+- Create mock data across Apr 20–24 (Event.date).
+- Ensure the date strip uses those real dates, not “Day 1..Day N”.

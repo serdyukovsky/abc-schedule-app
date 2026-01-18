@@ -13,9 +13,11 @@ export interface Event {
   isPlanned: boolean;
 }
 
-const day1 = new Date(2026, 0, 19);
-const day2 = new Date(2026, 0, 20);
-const day3 = new Date(2026, 0, 21);
+const day1 = new Date(2026, 3, 20); // April 20
+const day2 = new Date(2026, 3, 21); // April 21
+const day3 = new Date(2026, 3, 22); // April 22
+const day4 = new Date(2026, 3, 23); // April 23
+const day5 = new Date(2026, 3, 24); // April 24
 
 function createDate(baseDate: Date, hours: number, minutes: number): Date {
   const date = new Date(baseDate);
@@ -24,6 +26,7 @@ function createDate(baseDate: Date, hours: number, minutes: number): Date {
 }
 
 export const mockEvents: Event[] = [
+  // Day 1 - April 20
   {
     id: "1",
     title: "Opening Keynote: Future of Business in Altai",
@@ -129,6 +132,7 @@ export const mockEvents: Event[] = [
     topics: ["Gender equality", "Career growth", "Work-life balance"],
     isPlanned: false,
   },
+  // Day 2 - April 21
   {
     id: "9",
     title: "Day 2 Keynote: Innovation Ecosystems",
@@ -220,6 +224,7 @@ export const mockEvents: Event[] = [
     topics: [],
     isPlanned: false,
   },
+  // Day 3 - April 22
   {
     id: "16",
     title: "Day 3 Keynote: Global Markets Access",
@@ -261,24 +266,171 @@ export const mockEvents: Event[] = [
   },
   {
     id: "19",
+    title: "Product Development Workshop",
+    speakerName: "Katerina Orlova",
+    speakerRole: "Product Lead, InnoLab",
+    track: "Startups",
+    location: "Room A",
+    startTime: createDate(day3, 12, 30),
+    endTime: createDate(day3, 14, 0),
+    description: "Hands-on workshop on product development methodologies.",
+    topics: ["User research", "MVP development", "Iteration cycles"],
+    isPlanned: false,
+  },
+  {
+    id: "20",
+    title: "Networking Lunch",
+    speakerName: "",
+    speakerRole: "",
+    track: "Networking",
+    location: "Restaurant",
+    startTime: createDate(day3, 14, 0),
+    endTime: createDate(day3, 15, 0),
+    description: "Casual networking over lunch.",
+    topics: [],
+    isPlanned: false,
+  },
+  // Day 4 - April 23
+  {
+    id: "21",
+    title: "Day 4 Keynote: Future Technologies",
+    speakerName: "Roman Volkov",
+    speakerRole: "Futurist, TechVision",
+    track: "Keynote",
+    location: "Main Hall",
+    startTime: createDate(day4, 9, 0),
+    endTime: createDate(day4, 10, 0),
+    description: "Exploring emerging technologies that will shape the next decade.",
+    topics: ["Blockchain", "Quantum computing", "Biotech"],
+    isPlanned: false,
+  },
+  {
+    id: "22",
+    title: "E-commerce Masterclass",
+    speakerName: "Svetlana Petrova",
+    speakerRole: "CEO, ShopAltai",
+    track: "Marketing",
+    location: "Room A",
+    startTime: createDate(day4, 10, 30),
+    endTime: createDate(day4, 12, 0),
+    description: "Building and scaling successful e-commerce businesses.",
+    topics: ["Platform selection", "Customer acquisition", "Logistics"],
+    isPlanned: false,
+  },
+  {
+    id: "23",
+    title: "Cloud Infrastructure Deep Dive",
+    speakerName: "Igor Sidorov",
+    speakerRole: "Cloud Architect, CloudPro",
+    track: "Technology",
+    location: "Room B",
+    startTime: createDate(day4, 10, 30),
+    endTime: createDate(day4, 11, 30),
+    description: "Technical deep dive into modern cloud infrastructure.",
+    topics: ["Architecture patterns", "Cost optimization", "Security"],
+    isPlanned: false,
+  },
+  {
+    id: "24",
+    title: "Panel: Regional Development",
+    speakerName: "Various Speakers",
+    speakerRole: "Government & Business Leaders",
+    track: "Panel",
+    location: "Main Hall",
+    startTime: createDate(day4, 12, 30),
+    endTime: createDate(day4, 13, 30),
+    description: "Discussion on regional economic development strategies.",
+    topics: ["Infrastructure", "Investment incentives", "Talent retention"],
+    isPlanned: false,
+  },
+  {
+    id: "25",
+    title: "Evening Gala Dinner",
+    speakerName: "",
+    speakerRole: "",
+    track: "Networking",
+    location: "Grand Ballroom",
+    startTime: createDate(day4, 19, 0),
+    endTime: createDate(day4, 22, 0),
+    description: "Formal gala dinner with entertainment.",
+    topics: [],
+    isPlanned: false,
+  },
+  // Day 5 - April 24
+  {
+    id: "26",
+    title: "Final Keynote: Action Plan 2026",
+    speakerName: "Alexander Petrov",
+    speakerRole: "CEO, Altai Ventures",
+    track: "Keynote",
+    location: "Main Hall",
+    startTime: createDate(day5, 9, 0),
+    endTime: createDate(day5, 10, 0),
+    description: "Summarizing insights and creating actionable plans for the year ahead.",
+    topics: ["Key takeaways", "Implementation roadmap", "Community commitments"],
+    isPlanned: false,
+  },
+  {
+    id: "27",
+    title: "Startup Pitch Competition",
+    speakerName: "Various Startups",
+    speakerRole: "Competition Finalists",
+    track: "Startups",
+    location: "Main Hall",
+    startTime: createDate(day5, 10, 30),
+    endTime: createDate(day5, 12, 0),
+    description: "Final round of the startup pitch competition with investor panel.",
+    topics: ["Pitch presentations", "Q&A sessions", "Award ceremony"],
+    isPlanned: false,
+  },
+  {
+    id: "28",
+    title: "One-on-One Mentoring Sessions",
+    speakerName: "Industry Mentors",
+    speakerRole: "Various Experts",
+    track: "Leadership",
+    location: "Meeting Rooms",
+    startTime: createDate(day5, 12, 30),
+    endTime: createDate(day5, 14, 0),
+    description: "Book a slot for personalized mentoring with industry experts.",
+    topics: ["Career advice", "Business strategy", "Technical guidance"],
+    isPlanned: false,
+  },
+  {
+    id: "29",
     title: "Closing Ceremony & Awards",
     subtitle: "Celebrating Excellence",
     speakerName: "Event Organizers",
     speakerRole: "",
     track: "Keynote",
     location: "Main Hall",
-    startTime: createDate(day3, 15, 0),
-    endTime: createDate(day3, 16, 30),
+    startTime: createDate(day5, 15, 0),
+    endTime: createDate(day5, 16, 30),
     description: "Closing ceremony with awards for outstanding contributions.",
     topics: ["Award presentations", "Closing remarks", "Future announcements"],
+    isPlanned: false,
+  },
+  {
+    id: "30",
+    title: "Farewell Reception",
+    speakerName: "",
+    speakerRole: "",
+    track: "Networking",
+    location: "Terrace",
+    startTime: createDate(day5, 16, 30),
+    endTime: createDate(day5, 18, 0),
+    description: "Final networking opportunity before departure.",
+    topics: [],
     isPlanned: false,
   },
 ];
 
 export const eventDays = [
-  { date: day1, label: "Day 1", shortLabel: "Mon" },
-  { date: day2, label: "Day 2", shortLabel: "Tue" },
-  { date: day3, label: "Day 3", shortLabel: "Wed" },
+  { date: day1, label: "Apr 20", shortLabel: "20" },
+  { date: day2, label: "Apr 21", shortLabel: "21" },
+  { date: day3, label: "Apr 22", shortLabel: "22" },
+  { date: day4, label: "Apr 23", shortLabel: "23" },
+  { date: day5, label: "Apr 24", shortLabel: "24" },
 ];
 
 export const tracks = [

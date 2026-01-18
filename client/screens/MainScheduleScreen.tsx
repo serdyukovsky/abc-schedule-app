@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Keyboard } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
@@ -11,6 +11,7 @@ import { Spacing } from "@/constants/theme";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { FilterChips } from "@/components/FilterChips";
 import { DateSelector } from "@/components/DateSelector";
+import { SearchBar } from "@/components/SearchBar";
 import { TimeSlotRow } from "@/components/TimeSlotRow";
 import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
@@ -48,6 +49,8 @@ export default function MainScheduleScreen() {
   const [conflictModalVisible, setConflictModalVisible] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [conflictingEvent, setConflictingEvent] = useState<Event | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
@@ -74,7 +77,7 @@ export default function MainScheduleScreen() {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("ru-RU", {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -85,13 +88,25 @@ export default function MainScheduleScreen() {
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
   };
 
+  const matchesSearch = (event: Event, query: string): boolean => {
+    if (!query.trim()) return true;
+    const lowerQuery = query.toLowerCase().trim();
+    return (
+      event.title.toLowerCase().includes(lowerQuery) ||
+      event.speakerName.toLowerCase().includes(lowerQuery) ||
+      event.location.toLowerCase().includes(lowerQuery) ||
+      event.track.toLowerCase().includes(lowerQuery)
+    );
+  };
+
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       const matchesDate = isSameDay(event.startTime, selectedDate);
       const matchesTrack = selectedTrack === "All" || event.track === selectedTrack;
-      return matchesDate && matchesTrack;
+      const matchesSearchQuery = matchesSearch(event, searchQuery);
+      return matchesDate && matchesTrack && matchesSearchQuery;
     });
-  }, [events, selectedDate, selectedTrack]);
+  }, [events, selectedDate, selectedTrack, searchQuery]);
 
   const scheduleTimeSlots = useMemo(() => {
     const grouped: { [key: string]: Event[] } = {};
@@ -175,6 +190,7 @@ export default function MainScheduleScreen() {
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
+    Keyboard.dismiss();
     navigation.navigate("EventDetails", { eventId: event.id });
   }, [navigation]);
 
@@ -220,6 +236,16 @@ export default function MainScheduleScreen() {
     setConflictingEvent(null);
   };
 
+  const handleSearchPress = () => {
+    setIsSearching(true);
+  };
+
+  const handleSearchClose = () => {
+    setIsSearching(false);
+    setSearchQuery("");
+    Keyboard.dismiss();
+  };
+
   const showNowIndicator = isScheduleView && isToday(selectedDate);
 
   const hasEventsToday = plannedEvents.some((event) => {
@@ -255,8 +281,12 @@ export default function MainScheduleScreen() {
         ))
       ) : (
         <EmptyState
-          title="Нет событий"
-          message={`Нет событий на этот день${selectedTrack !== "All" ? ` в категории ${selectedTrack}` : ""}.`}
+          title={searchQuery ? "Ничего не найдено" : "Нет событий"}
+          message={
+            searchQuery
+              ? `По запросу «${searchQuery}» ничего не найдено.`
+              : `Нет событий на этот день${selectedTrack !== "All" ? ` в категории ${selectedTrack}` : ""}.`
+          }
         />
       )}
     </>
@@ -324,17 +354,28 @@ export default function MainScheduleScreen() {
         }}
         scrollIndicatorInsets={{ bottom: insets.bottom + 80 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {isScheduleView ? renderScheduleContent() : renderMyScheduleContent()}
       </ScrollView>
 
       {isScheduleView ? (
         <View style={[styles.bottomSelector, { bottom: insets.bottom + Spacing.sm }]}>
-          <DateSelector
-            dates={eventDays}
-            selectedDate={selectedDate}
-            onSelect={setSelectedDate}
-          />
+          {isSearching ? (
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onClose={handleSearchClose}
+            />
+          ) : (
+            <DateSelector
+              dates={eventDays}
+              selectedDate={selectedDate}
+              onSelect={setSelectedDate}
+              onSearchPress={handleSearchPress}
+              isSearchActive={isSearching}
+            />
+          )}
         </View>
       ) : null}
 

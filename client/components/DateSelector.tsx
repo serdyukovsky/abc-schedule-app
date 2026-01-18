@@ -1,6 +1,7 @@
 import React from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Platform, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -17,14 +18,27 @@ interface DateSelectorProps {
   dates: DateOption[];
   selectedDate: Date;
   onSelect: (date: Date) => void;
+  onSearchPress: () => void;
+  isSearchActive?: boolean;
 }
 
-export function DateSelector({ dates, selectedDate, onSelect }: DateSelectorProps) {
+export function DateSelector({ 
+  dates, 
+  selectedDate, 
+  onSelect, 
+  onSearchPress,
+  isSearchActive = false,
+}: DateSelectorProps) {
   const { theme, isDark } = useTheme();
 
   const handleSelect = (date: Date) => {
     Haptics.selectionAsync();
     onSelect(date);
+  };
+
+  const handleSearchPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSearchPress();
   };
 
   const isSameDay = (d1: Date, d2: Date) => {
@@ -35,58 +49,105 @@ export function DateSelector({ dates, selectedDate, onSelect }: DateSelectorProp
     );
   };
 
+  const formatMonth = (date: Date) => {
+    return date.toLocaleDateString("ru-RU", { month: "short" }).replace(".", "");
+  };
+
   const content = (
     <View style={styles.innerContainer}>
-      {dates.map((dateOption, index) => {
-        const isSelected = isSameDay(dateOption.date, selectedDate);
-        return (
-          <Pressable
-            key={index}
-            onPress={() => handleSelect(dateOption.date)}
-            style={[
-              styles.dateButton,
-              isSelected && [
-                styles.selectedDateButton,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(255, 255, 255, 0.18)"
-                    : "rgba(255, 255, 255, 0.85)",
-                },
-              ],
-            ]}
-            testID={`date-selector-${index}`}
-          >
-            <ThemedText
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.datesScrollContent}
+      >
+        {dates.map((dateOption, index) => {
+          const isSelected = isSameDay(dateOption.date, selectedDate);
+          return (
+            <Pressable
+              key={index}
+              onPress={() => handleSelect(dateOption.date)}
               style={[
-                styles.dayNumber,
-                {
-                  color: isSelected
-                    ? theme.text
-                    : isDark
-                    ? "rgba(255, 255, 255, 0.7)"
-                    : "rgba(0, 0, 0, 0.7)",
-                },
+                styles.dateButton,
+                isSelected && [
+                  styles.selectedDateButton,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(255, 255, 255, 0.18)"
+                      : "rgba(255, 255, 255, 0.85)",
+                  },
+                ],
               ]}
+              testID={`date-selector-${index}`}
             >
-              {dateOption.date.getDate()}
-            </ThemedText>
-            <ThemedText
-              style={[
-                styles.dayLabel,
-                {
-                  color: isSelected
-                    ? theme.textSecondary
-                    : isDark
-                    ? "rgba(255, 255, 255, 0.5)"
-                    : "rgba(0, 0, 0, 0.5)",
-                },
-              ]}
-            >
-              {dateOption.shortLabel}
-            </ThemedText>
-          </Pressable>
-        );
-      })}
+              <ThemedText
+                style={[
+                  styles.dayNumber,
+                  {
+                    color: isSelected
+                      ? theme.text
+                      : isDark
+                      ? "rgba(255, 255, 255, 0.7)"
+                      : "rgba(0, 0, 0, 0.7)",
+                  },
+                ]}
+              >
+                {dateOption.date.getDate()}
+              </ThemedText>
+              <ThemedText
+                style={[
+                  styles.dayLabel,
+                  {
+                    color: isSelected
+                      ? theme.textSecondary
+                      : isDark
+                      ? "rgba(255, 255, 255, 0.5)"
+                      : "rgba(0, 0, 0, 0.5)",
+                  },
+                ]}
+              >
+                {formatMonth(dateOption.date)}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <View
+        style={[
+          styles.divider,
+          {
+            backgroundColor: isDark
+              ? "rgba(255, 255, 255, 0.15)"
+              : "rgba(0, 0, 0, 0.1)",
+          },
+        ]}
+      />
+
+      <Pressable
+        onPress={handleSearchPress}
+        style={[
+          styles.searchButton,
+          isSearchActive && {
+            backgroundColor: isDark
+              ? "rgba(255, 255, 255, 0.18)"
+              : "rgba(255, 255, 255, 0.85)",
+          },
+        ]}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        testID="search-button"
+      >
+        <Feather
+          name="search"
+          size={20}
+          color={
+            isSearchActive
+              ? theme.link
+              : isDark
+              ? "rgba(255, 255, 255, 0.7)"
+              : "rgba(0, 0, 0, 0.7)"
+          }
+        />
+      </Pressable>
     </View>
   );
 
@@ -145,21 +206,24 @@ const styles = StyleSheet.create({
   },
   androidContainer: {
     paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.sm,
   },
   innerContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.sm,
+    alignItems: "center",
     paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+  },
+  datesScrollContent: {
+    flexDirection: "row",
+    gap: Spacing.xs,
   },
   dateButton: {
     alignItems: "center",
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: 14,
-    minWidth: 56,
+    minWidth: 48,
   },
   selectedDateButton: {
     borderRadius: 14,
@@ -173,5 +237,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "500",
     marginTop: 2,
+    textTransform: "lowercase",
+  },
+  divider: {
+    width: 1,
+    height: 32,
+    marginHorizontal: Spacing.sm,
+  },
+  searchButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
   },
 });
