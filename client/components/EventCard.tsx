@@ -4,6 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
+import { SpeakerRow } from "@/components/SpeakerRow";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { Event } from "@/data/mockEvents";
@@ -34,13 +35,17 @@ export function EventCard({
     onTogglePlanned?.();
   };
 
+  const isInactive = hasConflict && !event.isPlanned;
+  const titleColor = isInactive ? theme.textSecondary : theme.text;
+  const cardOpacity = isPast ? 0.5 : isInactive ? 0.85 : 1;
+
   return (
     <View
       style={[
         styles.container,
         {
           backgroundColor: isCurrent ? theme.currentHighlight : theme.backgroundDefault,
-          opacity: isPast ? 0.5 : 1,
+          opacity: cardOpacity,
           borderLeftColor: isCurrent ? theme.link : "transparent",
         },
       ]}
@@ -53,35 +58,19 @@ export function EventCard({
               {event.track}
             </ThemedText>
           </View>
-          {hasConflict ? (
-            <View style={[styles.conflictBadge, { backgroundColor: `${theme.conflict}20` }]}>
-              <ThemedText style={[styles.conflictText, { color: theme.conflict }]}>
-                Конфликт
-              </ThemedText>
-            </View>
-          ) : null}
         </View>
 
         <Pressable onPress={onPress} testID={`event-title-${event.id}`}>
-          <ThemedText style={[styles.title, { color: theme.text }]} numberOfLines={2}>
+          <ThemedText style={[styles.title, { color: titleColor }]} numberOfLines={2}>
             {event.title}
           </ThemedText>
         </Pressable>
 
         {event.speakerName ? (
-          <ThemedText style={[styles.speaker, { color: theme.textSecondary }]} numberOfLines={1}>
-            {event.speakerName}
-          </ThemedText>
-        ) : null}
-
-        <View style={styles.footer}>
-          <View style={styles.locationRow}>
-            <Feather name="map-pin" size={11} color={theme.textSecondary} />
-            <ThemedText style={[styles.location, { color: theme.textSecondary }]} numberOfLines={1}>
-              {event.location}
-            </ThemedText>
+          <View style={styles.speakerContainer}>
+            <SpeakerRow name={event.speakerName} size={22} />
           </View>
-        </View>
+        ) : null}
 
         {showActions ? (
           <Pressable
@@ -111,8 +100,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.md,
-    paddingBottom: Spacing.lg,
-    minHeight: 100,
+    paddingBottom: Spacing.md,
+    minHeight: 80,
   },
   topRow: {
     flexDirection: "row",
@@ -131,41 +120,19 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  conflictBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
-  },
-  conflictText: {
-    fontSize: 10,
-    fontWeight: "600",
-  },
   title: {
     fontSize: 15,
     fontWeight: "600",
     lineHeight: 20,
     paddingRight: 48,
   },
-  speaker: {
-    fontSize: 13,
-    marginTop: Spacing.xs,
-    paddingRight: 48,
-  },
-  footer: {
+  speakerContainer: {
     marginTop: Spacing.sm,
     paddingRight: 48,
   },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  location: {
-    fontSize: 12,
-  },
   addButton: {
     position: "absolute",
-    bottom: Spacing.md,
+    bottom: Spacing.sm,
     right: Spacing.md,
     width: 44,
     height: 44,

@@ -1,0 +1,44 @@
+Update timeline card UI and conflict presentation:
+
+1) Conflict visualization (no “Conflict” label)
+- Remove any “Conflict” badge/text from UI.
+- If an event is in conflict with another planned event in the same time range,
+  the event should look “inactive”:
+  - The event TITLE text becomes gray (secondary / tertiary color).
+  - Optionally reduce overall card opacity slightly (e.g., 0.85), but do NOT fade too much.
+- Keep the plus/check button working:
+  - If the event is currently planned, it stays active (normal title).
+  - If it conflicts with an already planned event and is NOT planned, show it as inactive (gray title).
+- Conflict detection should still exist logically, just not shown as a label.
+
+Rule:
+- In My Schedule view, there should never be multiple overlapping planned events shown as “inactive”.
+  Instead, if user kept both, both are planned and shown normal.
+- The “inactive gray title” is mainly for the Schedule view to help decision-making:
+  planned event = normal, conflicting alternatives = gray title.
+
+2) Timeline EventCard content (remove location)
+- On timeline cards, do NOT display location/venue at all.
+- Keep only:
+  - Title
+  - Speaker row (avatar + name)
+  - Optional small track label if you already have it (ok to keep)
+  - Time is already implied by the slot; don’t repeat inside the card unless necessary.
+
+3) Speaker avatar next to speaker name
+- In the speaker line, show a small circular avatar to the left of speaker name:
+  - size ~20–24pt
+  - circular (clipShape(Circle()))
+  - if no real image available, use initials placeholder (e.g. “IA”) with a subtle background.
+- Layout: [Avatar] [Speaker name] on one line, compact.
+
+Implementation hints:
+- Add fields to Event model:
+  - speakerAvatarURL (optional) or speakerInitials (string)
+- Build a reusable SpeakerRow component.
+- Title color logic:
+  - if event.isPlanned -> .primary
+  - else if event.isConflictingWithPlanned -> .secondary (gray)
+  - else -> .primary
+- Ensure the gray title still allows tapping the title to open details (if you want),
+  but visually indicates “not a good choice due to overlap”.
