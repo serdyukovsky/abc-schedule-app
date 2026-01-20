@@ -6,6 +6,7 @@ export interface UserProfile {
   lastName: string;
   company: string;
   title: string;
+  phone: string;
   login: string;
 }
 
@@ -15,6 +16,8 @@ interface AuthContextType {
   profile: UserProfile | null;
   login: (loginId: string, password: string) => Promise<boolean>;
   register: (profile: UserProfile, password: string) => Promise<boolean>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
   getFullName: () => string;
 }
@@ -98,6 +101,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
+    try {
+      if (!profile) return false;
+      const updatedProfile: UserProfile = { ...profile, ...updates };
+      await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updatedProfile));
+      setProfile(updatedProfile);
+      return true;
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return false;
+    }
+  };
+
+  const changePassword = async (
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<boolean> => {
+    try {
+      const storedPassword = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORD);
+      if (!storedPassword || storedPassword !== currentPassword) {
+        return false;
+      }
+      await AsyncStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
+      return true;
+    } catch (error) {
+      console.error("Change password error:", error);
+      return false;
+    }
+  };
+
   const logout = async () => {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.IS_LOGGED_IN, "false");
@@ -120,6 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         login,
         register,
+        updateProfile,
+        changePassword,
         logout,
         getFullName,
       }}

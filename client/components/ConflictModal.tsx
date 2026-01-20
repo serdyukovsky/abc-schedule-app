@@ -66,7 +66,9 @@ export function ConflictModal({
               onPress={handleReplace}
               style={[styles.button, { backgroundColor: theme.link }]}
             >
-              <ThemedText style={styles.buttonTextPrimary}>Заменить</ThemedText>
+              <ThemedText style={[styles.buttonTextPrimary, { color: theme.buttonText }]}>
+                Заменить
+              </ThemedText>
             </Pressable>
 
             <Pressable
@@ -142,7 +144,6 @@ const styles = StyleSheet.create({
   buttonTextPrimary: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   buttonText: {
     fontSize: 16,

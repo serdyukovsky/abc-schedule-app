@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Keyboard } from "react-native";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { View, StyleSheet, ScrollView, Keyboard, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useNavigation } from "@react-navigation/native";
@@ -45,12 +45,13 @@ export default function MainScheduleScreen() {
 
   const [selectedSegment, setSelectedSegment] = useState(0);
   const [selectedDate, setSelectedDate] = useState(eventDays[0].date);
-  const [selectedTrack, setSelectedTrack] = useState("All");
+  const [selectedTrack, setSelectedTrack] = useState("Все");
   const [conflictModalVisible, setConflictModalVisible] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [conflictingEvent, setConflictingEvent] = useState<Event | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
@@ -69,7 +70,7 @@ export default function MainScheduleScreen() {
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -102,7 +103,7 @@ export default function MainScheduleScreen() {
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
       const matchesDate = isSameDay(event.startTime, selectedDate);
-      const matchesTrack = selectedTrack === "All" || event.track === selectedTrack;
+      const matchesTrack = selectedTrack === "Все" || event.track === selectedTrack;
       const matchesSearchQuery = matchesSearch(event, searchQuery);
       return matchesDate && matchesTrack && matchesSearchQuery;
     });
@@ -246,6 +247,28 @@ export default function MainScheduleScreen() {
     Keyboard.dismiss();
   };
 
+  useEffect(() => {
+    if (!isSearching) {
+      setKeyboardHeight(0);
+      return;
+    }
+
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates?.height ?? 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [isSearching]);
+
   const showNowIndicator = isScheduleView && isToday(selectedDate);
 
   const hasEventsToday = plannedEvents.some((event) => {
@@ -285,7 +308,7 @@ export default function MainScheduleScreen() {
           message={
             searchQuery
               ? `По запросу «${searchQuery}» ничего не найдено.`
-              : `Нет событий на этот день${selectedTrack !== "All" ? ` в категории ${selectedTrack}` : ""}.`
+              : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`
           }
         />
       )}
@@ -360,7 +383,17 @@ export default function MainScheduleScreen() {
       </ScrollView>
 
       {isScheduleView ? (
-        <View style={[styles.bottomSelector, { bottom: insets.bottom + Spacing.sm }]}>
+        <View
+          style={[
+            styles.bottomSelector,
+            {
+              bottom:
+                insets.bottom +
+                Spacing.sm +
+                (isSearching ? Math.max(0, keyboardHeight - insets.bottom) : 0),
+            },
+          ]}
+        >
           {isSearching ? (
             <SearchBar
               value={searchQuery}

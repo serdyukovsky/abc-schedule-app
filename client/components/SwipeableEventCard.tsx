@@ -78,15 +78,15 @@ export function SwipeableEventCard({
   return (
     <View style={styles.wrapper}>
       <Animated.View style={[styles.leftAction, { backgroundColor: theme.link }, leftActionStyle]}>
-        <Feather name={event.isPlanned ? "x" : "plus"} size={20} color="#FFFFFF" />
-        <ThemedText style={styles.actionText}>
+        <Feather name={event.isPlanned ? "x" : "plus"} size={20} color={theme.buttonText} />
+        <ThemedText style={[styles.actionText, { color: theme.buttonText }]}>
           {event.isPlanned ? "Убрать" : "Добавить"}
         </ThemedText>
       </Animated.View>
 
       <Animated.View style={[styles.rightAction, { backgroundColor: theme.link }, rightActionStyle]}>
-        <Feather name={event.isPlanned ? "x" : "plus"} size={20} color="#FFFFFF" />
-        <ThemedText style={styles.actionText}>
+        <Feather name={event.isPlanned ? "x" : "plus"} size={20} color={theme.buttonText} />
+        <ThemedText style={[styles.actionText, { color: theme.buttonText }]}>
           {event.isPlanned ? "Убрать" : "Добавить"}
         </ThemedText>
       </Animated.View>
@@ -173,7 +173,6 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#FFFFFF",
   },
   container: {
     borderRadius: BorderRadius.sm,

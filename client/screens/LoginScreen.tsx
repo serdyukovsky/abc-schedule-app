@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -27,9 +28,11 @@ export default function LoginScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { login } = useAuth();
+  const topPadding = insets.top + Spacing["5xl"];
 
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -63,7 +66,7 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + Spacing["3xl"], paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: topPadding, paddingBottom: insets.bottom + Spacing.xl },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -78,7 +81,7 @@ export default function LoginScreen() {
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Логин
+              Электронная почта
             </ThemedText>
             <TextInput
               style={[
@@ -91,10 +94,12 @@ export default function LoginScreen() {
               ]}
               value={loginId}
               onChangeText={setLoginId}
-              placeholder="Введите логин"
+              placeholder="user@domain.ru"
               placeholderTextColor={theme.textMuted}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="emailAddress"
               testID="input-login"
             />
           </View>
@@ -103,22 +108,37 @@ export default function LoginScreen() {
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
               Пароль
             </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Введите пароль"
-              placeholderTextColor={theme.textMuted}
-              secureTextEntry
-              testID="input-password"
-            />
+            <View style={[styles.passwordRow, { borderColor: theme.separator }]}>
+              <TextInput
+                style={[
+                  styles.input,
+                  styles.passwordInput,
+                  {
+                    backgroundColor: theme.backgroundDefault,
+                    color: theme.text,
+                  },
+                ]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Введите пароль"
+                placeholderTextColor={theme.textMuted}
+                secureTextEntry={!isPasswordVisible}
+                testID="input-password"
+              />
+              <Pressable
+                onPress={() => setIsPasswordVisible((prev) => !prev)}
+                style={[styles.passwordToggle, { backgroundColor: theme.backgroundDefault }]}
+                accessibilityRole="button"
+                accessibilityLabel={isPasswordVisible ? "Скрыть пароль" : "Показать пароль"}
+                testID="toggle-password-visibility"
+              >
+                <Feather
+                  name={isPasswordVisible ? "eye-off" : "eye"}
+                  size={18}
+                  color={theme.textSecondary}
+                />
+              </Pressable>
+            </View>
           </View>
 
           <Pressable
@@ -131,7 +151,7 @@ export default function LoginScreen() {
             disabled={isLoading}
             testID="button-login"
           >
-            <ThemedText style={styles.buttonText}>
+            <ThemedText style={[styles.buttonText, { color: theme.buttonText }]}>
               {isLoading ? "Вход..." : "Войти"}
             </ThemedText>
           </Pressable>
@@ -157,10 +177,12 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
+    paddingTop: Spacing["2xl"],
     marginBottom: Spacing["4xl"],
   },
   logo: {
     fontSize: 48,
+    lineHeight: 56,
     fontWeight: "700",
     letterSpacing: 4,
   },
@@ -188,6 +210,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
   },
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  passwordInput: {
+    flex: 1,
+    borderWidth: 0,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  passwordToggle: {
+    paddingHorizontal: Spacing.md,
+    height: Spacing.inputHeight,
+    justifyContent: "center",
+    borderTopRightRadius: BorderRadius.sm,
+    borderBottomRightRadius: BorderRadius.sm,
+  },
   button: {
     height: Spacing.buttonHeight,
     borderRadius: BorderRadius.sm,
@@ -199,7 +240,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
   },

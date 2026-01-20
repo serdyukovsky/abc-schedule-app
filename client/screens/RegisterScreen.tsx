@@ -23,17 +23,54 @@ export default function RegisterScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const { register } = useAuth();
+  const topPadding = insets.top + Spacing["5xl"];
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
   const [title, setTitle] = useState("");
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+
+    let normalized = digits;
+    if (normalized.startsWith("8")) {
+      normalized = `7${normalized.slice(1)}`;
+    } else if (!normalized.startsWith("7")) {
+      normalized = `7${normalized}`;
+    }
+
+    const local = normalized.slice(1, 11);
+    const parts = [
+      local.slice(0, 3),
+      local.slice(3, 6),
+      local.slice(6, 8),
+      local.slice(8, 10),
+    ];
+
+    let formatted = "+7";
+    if (parts[0]) formatted += ` (${parts[0]}`;
+    if (parts[0]?.length === 3) formatted += ")";
+    if (parts[1]) formatted += ` ${parts[1]}`;
+    if (parts[2]) formatted += `-${parts[2]}`;
+    if (parts[3]) formatted += `-${parts[3]}`;
+
+    return formatted;
+  };
+
   const handleRegister = async () => {
-    if (!firstName.trim() || !lastName.trim() || !loginId.trim() || !password.trim()) {
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !phone.trim() ||
+      !loginId.trim() ||
+      !password.trim()
+    ) {
       Alert.alert("Ошибка", "Заполните обязательные поля");
       return;
     }
@@ -45,6 +82,7 @@ export default function RegisterScreen() {
       {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        phone: phone.trim(),
         company: company.trim(),
         title: title.trim(),
         login: loginId.trim(),
@@ -72,7 +110,7 @@ export default function RegisterScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingTop: insets.top + Spacing["2xl"], paddingBottom: insets.bottom + Spacing.xl },
+          { paddingTop: topPadding, paddingBottom: insets.bottom + Spacing.xl },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -132,6 +170,29 @@ export default function RegisterScreen() {
 
           <View style={styles.inputGroup}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+              Телефон *
+            </ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: theme.backgroundDefault,
+                  color: theme.text,
+                  borderColor: theme.separator,
+                },
+              ]}
+              value={phone}
+              onChangeText={(value) => setPhone(formatPhoneNumber(value))}
+              placeholder="+7 (999) 123-45-67"
+              placeholderTextColor={theme.textMuted}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              testID="input-phone"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
               Компания
             </ThemedText>
             <TextInput
@@ -174,7 +235,7 @@ export default function RegisterScreen() {
 
           <View style={styles.inputGroup}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Логин *
+              Электронная почта *
             </ThemedText>
             <TextInput
               style={[
@@ -187,10 +248,12 @@ export default function RegisterScreen() {
               ]}
               value={loginId}
               onChangeText={setLoginId}
-              placeholder="Придумайте логин"
+              placeholder="user@domain.ru"
               placeholderTextColor={theme.textMuted}
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              textContentType="emailAddress"
               testID="input-login"
             />
           </View>
@@ -227,7 +290,7 @@ export default function RegisterScreen() {
             disabled={isLoading}
             testID="button-register"
           >
-            <ThemedText style={styles.buttonText}>
+            <ThemedText style={[styles.buttonText, { color: theme.buttonText }]}>
               {isLoading ? "Регистрация..." : "Зарегистрироваться"}
             </ThemedText>
           </Pressable>
@@ -252,10 +315,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   header: {
+    paddingTop: Spacing["2xl"],
     marginBottom: Spacing["2xl"],
   },
   title: {
     fontSize: 28,
+    lineHeight: 34,
     fontWeight: "700",
   },
   form: {
@@ -296,7 +361,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
   },

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ABC",
-    "slug": "abc-altai-business-camp",
+    "name": "ABC Schedule App",
+    "slug": "abc-schedule-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

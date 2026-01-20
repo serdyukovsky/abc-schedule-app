@@ -33,7 +33,7 @@ export default function EventDetailsScreen() {
   const conflict = hasConflict(event);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-US", {
+    return date.toLocaleTimeString("ru-RU", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -73,6 +73,9 @@ export default function EventDetailsScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.dragHandleContainer}>
+          <View style={[styles.dragHandle, { backgroundColor: theme.separator }]} />
+        </View>
         <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
           <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>
             {event.track}
@@ -185,12 +188,12 @@ export default function EventDetailsScreen() {
           <Feather
             name={event.isPlanned ? "check" : "plus"}
             size={18}
-            color={event.isPlanned ? theme.text : "#FFFFFF"}
+            color={event.isPlanned ? theme.text : theme.buttonText}
           />
           <ThemedText
             style={[
               styles.buttonText,
-              { color: event.isPlanned ? theme.text : "#FFFFFF" },
+              { color: event.isPlanned ? theme.text : theme.buttonText },
             ]}
           >
             {event.isPlanned ? "Добавлено" : "Добавить в моё расписание"}
@@ -208,6 +211,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
+  },
+  dragHandleContainer: {
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  dragHandle: {
+    width: 48,
+    height: 4,
+    borderRadius: 2,
   },
   trackBadge: {
     alignSelf: "flex-start",

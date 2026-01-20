@@ -24,6 +24,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.scrollView}
       contentContainerStyle={styles.container}
     >
       {options.map((option) => {
@@ -58,15 +59,20 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
 }
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flexGrow: 0,
+  },
   container: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
+    alignItems: "center",
     gap: Spacing.sm,
   },
   chip: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 2,
     borderRadius: BorderRadius.full,
+    alignSelf: "flex-start",
   },
   chipText: {
     fontSize: 13,
