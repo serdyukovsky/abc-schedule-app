@@ -2,7 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainScheduleScreen from "@/screens/MainScheduleScreen";
 import EventDetailsScreen from "@/screens/EventDetailsScreen";
-import { HeaderTitle } from "@/components/HeaderTitle";
+import { AppHeader } from "@/components/AppHeader";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 
 export type RootStackParamList = {
@@ -21,7 +21,7 @@ export default function RootStackNavigator() {
         name="Main"
         component={MainScheduleScreen}
         options={{
-          headerTitle: () => <HeaderTitle title="ABC" />,
+          headerTitle: () => <AppHeader />,
         }}
       />
       <Stack.Screen

@@ -1,0 +1,60 @@
+Add user auth + top header identity:
+
+1) Top header layout (Schedule & My Schedule screens)
+- Add a custom header row at the very top (inside NavigationStack content):
+  - Left aligned: ABC logo (simple “ABC” wordmark or a small logo image if available)
+  - Right aligned: user full name “Имя Фамилия” (text only, no avatar)
+- The header must be minimalist:
+  - No profile photo
+  - No extra icons
+  - Same style in both tabs (Schedule/My Schedule)
+- Use HStack with Spacer:
+  [ABC logo] Spacer() [Full Name]
+- Full name should truncate gracefully if long.
+- Tapping the name can open Profile (optional), but not required.
+
+2) Authentication flow (simple)
+Goal: require login before using the app.
+
+States:
+- If NOT logged in -> show Auth flow (Login / Register)
+- If logged in -> show the main schedule UI
+
+Login screen:
+- Title: “ABC — Altai Business Camp”
+- Fields:
+  - Login
+  - Password (secure)
+- Button: “Войти”
+- Secondary action: “Создать аккаунт” -> goes to Register
+
+Register screen:
+- Fields:
+  - Имя
+  - Фамилия
+  - Компания
+  - Должность
+  - Login
+  - Password
+- Button: “Зарегистрироваться”
+- Secondary action: “У меня уже есть аккаунт” -> back to Login
+
+3) Storage (no backend)
+- Implement local persistence using UserDefaults (or Keychain for password if easy).
+- Minimal approach is fine for now:
+  - Save a UserProfile object locally after registration.
+  - Login checks entered login/password against saved values.
+- After successful login, store isLoggedIn = true and show main app.
+- Provide a simple “Выйти” action (e.g., in Profile or in a minimal settings sheet).
+
+4) Profile data usage
+- Display “Имя Фамилия” in the top-right header everywhere in the main app.
+- Company/Role can be stored but not displayed in header (optional for Profile screen later).
+
+Implementation notes (SwiftUI):
+- Create AppState (ObservableObject):
+  - @Published isLoggedIn: Bool
+  - @Published profile: UserProfile?
+- RootView decides which flow to show (Auth vs Main).
+- UserProfile model: firstName, lastName, company, title, login.
+- Keep UI consistent with iOS HIG, minimalist.
