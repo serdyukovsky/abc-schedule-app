@@ -101,7 +101,7 @@ export default function MainScheduleScreen() {
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <AppHeader selectedSegment={selectedSegment} onSelectSegment={setSelectedSegment} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: 52, paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
         {isScheduleView ? (
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
