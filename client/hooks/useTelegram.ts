@@ -1,27 +1,35 @@
-const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
-const _isTelegram = Boolean(webApp?.initData);
+function getWebApp() {
+  return typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
+}
 
 export function isTelegramWebApp(): boolean {
-  return _isTelegram;
+  const webApp = getWebApp();
+  return Boolean(webApp?.initData);
 }
 
 export function useTelegram() {
+  const webApp = getWebApp();
+  const isTelegram = Boolean(webApp?.initData);
+
   return {
-    isTelegram: _isTelegram,
+    isTelegram,
     webApp,
     initData: webApp?.initData || "",
     user: webApp?.initDataUnsafe?.user || null,
 
     hapticImpact(style: "light" | "medium" | "heavy" = "medium") {
-      if (_isTelegram) webApp?.HapticFeedback?.impactOccurred(style);
+      const app = getWebApp();
+      if (app?.initData) app.HapticFeedback?.impactOccurred(style);
     },
 
     hapticNotification(type: "success" | "warning" | "error" = "success") {
-      if (_isTelegram) webApp?.HapticFeedback?.notificationOccurred(type);
+      const app = getWebApp();
+      if (app?.initData) app.HapticFeedback?.notificationOccurred(type);
     },
 
     hapticSelection() {
-      if (_isTelegram) webApp?.HapticFeedback?.selectionChanged();
+      const app = getWebApp();
+      if (app?.initData) app.HapticFeedback?.selectionChanged();
     },
   };
 }
