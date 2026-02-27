@@ -1,15 +1,7 @@
 import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
-import * as Haptics from "expo-haptics";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
-
-import { ThemedText } from "@/components/ThemedText";
+import { View, Text, Pressable, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
 
 interface SegmentedControlProps {
   segments: string[];
@@ -17,62 +9,23 @@ interface SegmentedControlProps {
   onSelect: (index: number) => void;
 }
 
-export function SegmentedControl({
-  segments,
-  selectedIndex,
-  onSelect,
-}: SegmentedControlProps) {
+export function SegmentedControl({ segments, selectedIndex, onSelect }: SegmentedControlProps) {
   const { theme, isDark } = useTheme();
 
-  const handleSelect = (index: number) => {
-    if (index !== selectedIndex) {
-      Haptics.selectionAsync();
-      onSelect(index);
-    }
-  };
-
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: isDark ? "rgba(120, 120, 128, 0.24)" : "rgba(118, 118, 128, 0.12)",
-        },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: isDark ? "rgba(120,120,128,0.24)" : "rgba(118,118,128,0.12)" }]}>
       {segments.map((segment, index) => {
         const isSelected = index === selectedIndex;
         return (
           <Pressable
             key={segment}
-            onPress={() => handleSelect(index)}
-            style={[
-              styles.segment,
-              isSelected && [
-                styles.selectedSegment,
-                {
-                  backgroundColor: isDark ? "rgba(99, 99, 102, 0.9)" : "#FFFFFF",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: isDark ? 0.3 : 0.1,
-                  shadowRadius: 2,
-                  elevation: 2,
-                },
-              ],
-            ]}
+            onPress={() => { if (index !== selectedIndex) onSelect(index); }}
+            style={[styles.segment, isSelected && [styles.selectedSegment, { backgroundColor: isDark ? "rgba(99,99,102,0.9)" : "#FFFFFF", boxShadow: `0 1px 2px rgba(0,0,0,${isDark ? 0.3 : 0.1})` }]]}
             testID={`segment-${index}`}
           >
-            <ThemedText
-              style={[
-                styles.segmentText,
-                {
-                  color: isSelected ? theme.text : theme.textSecondary,
-                  fontWeight: isSelected ? "600" : "500",
-                },
-              ]}
-            >
+            <Text style={[styles.segmentText, { color: isSelected ? theme.text : theme.textSecondary, fontWeight: isSelected ? "600" : "500" }]}>
               {segment}
-            </ThemedText>
+            </Text>
           </Pressable>
         );
       })}
@@ -81,24 +34,8 @@ export function SegmentedControl({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    borderRadius: 9,
-    padding: 2,
-    marginHorizontal: Spacing.lg,
-    marginVertical: Spacing.sm,
-  },
-  segment: {
-    flex: 1,
-    paddingVertical: 7,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 7,
-  },
-  selectedSegment: {
-    borderRadius: 7,
-  },
-  segmentText: {
-    fontSize: 13,
-  },
+  container: { flexDirection: "row", borderRadius: 8, padding: 2, marginHorizontal: Spacing.lg, marginVertical: 4 },
+  segment: { flex: 1, paddingVertical: 5, alignItems: "center", justifyContent: "center", borderRadius: 6 },
+  selectedSegment: { borderRadius: 6 },
+  segmentText: { fontSize: 12 },
 });

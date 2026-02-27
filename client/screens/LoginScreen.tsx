@@ -1,101 +1,62 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  View,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-
-import { ThemedText } from "@/components/ThemedText";
+  View, Text, Pressable, ScrollView, TextInput,
+  KeyboardAvoidingView, StyleSheet,
+} from "@/components/primitives";
+import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
-import { Spacing, BorderRadius, Typography } from "@/constants/theme";
-import { AuthStackParamList } from "@/navigation/AuthNavigator";
-
-type NavigationProp = NativeStackNavigationProp<AuthStackParamList, "Login">;
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 export default function LoginScreen() {
-  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
+  const navigate = useNavigate();
   const { login } = useAuth();
-  const topPadding = insets.top + Spacing["5xl"];
 
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
+    setError("");
     if (!loginId.trim() || !password.trim()) {
-      Alert.alert("Ошибка", "Заполните все поля");
+      setError("Заполните все поля");
       return;
     }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsLoading(true);
-
     const success = await login(loginId.trim(), password);
-
     setIsLoading(false);
-
-    if (!success) {
-      Alert.alert("Ошибка", "Неверный логин или пароль");
-    }
-  };
-
-  const handleRegister = () => {
-    Haptics.selectionAsync();
-    navigation.navigate("Register");
+    if (!success) setError("Неверный логин или пароль");
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: topPadding, paddingBottom: insets.bottom + Spacing.xl },
-        ]}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <ThemedText style={[styles.logo, { color: theme.text }]}>ABC</ThemedText>
-          <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Altai Business Camp
-          </ThemedText>
+          <Text style={[styles.logo, { color: theme.text }]}>ABC</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Altai Business Camp</Text>
         </View>
 
         <View style={styles.form}>
+          {error ? (
+            <View style={[styles.errorBanner, { backgroundColor: `${theme.conflict}18` }]}>
+              <Text style={[styles.errorText, { color: theme.conflict }]}>{error}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Электронная почта
-            </ThemedText>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Электронная почта</Text>
             <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
+              style={[styles.input, { backgroundColor: theme.backgroundDefault, color: theme.text, borderColor: theme.separator }]}
               value={loginId}
               onChangeText={setLoginId}
               placeholder="user@domain.ru"
-              placeholderTextColor={theme.textMuted}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -105,61 +66,39 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Пароль
-            </ThemedText>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Пароль</Text>
             <View style={[styles.passwordRow, { borderColor: theme.separator }]}>
               <TextInput
-                style={[
-                  styles.input,
-                  styles.passwordInput,
-                  {
-                    backgroundColor: theme.backgroundDefault,
-                    color: theme.text,
-                  },
-                ]}
+                style={[styles.input, styles.passwordInput, { backgroundColor: theme.backgroundDefault, color: theme.text }]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Введите пароль"
-                placeholderTextColor={theme.textMuted}
                 secureTextEntry={!isPasswordVisible}
                 testID="input-password"
               />
               <Pressable
-                onPress={() => setIsPasswordVisible((prev) => !prev)}
+                onPress={() => setIsPasswordVisible((p) => !p)}
                 style={[styles.passwordToggle, { backgroundColor: theme.backgroundDefault }]}
-                accessibilityRole="button"
-                accessibilityLabel={isPasswordVisible ? "Скрыть пароль" : "Показать пароль"}
                 testID="toggle-password-visibility"
               >
-                <Feather
-                  name={isPasswordVisible ? "eye-off" : "eye"}
-                  size={18}
-                  color={theme.textSecondary}
-                />
+                <Feather name={isPasswordVisible ? "eye-off" : "eye"} size={18} color={theme.textSecondary} />
               </Pressable>
             </View>
           </View>
 
           <Pressable
-            style={[
-              styles.button,
-              { backgroundColor: theme.link },
-              isLoading && styles.buttonDisabled,
-            ]}
+            style={[styles.button, { backgroundColor: theme.link }, isLoading ? styles.buttonDisabled : undefined]}
             onPress={handleLogin}
             disabled={isLoading}
             testID="button-login"
           >
-            <ThemedText style={[styles.buttonText, { color: theme.buttonText }]}>
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>
               {isLoading ? "Вход..." : "Войти"}
-            </ThemedText>
+            </Text>
           </Pressable>
 
-          <Pressable style={styles.linkButton} onPress={handleRegister}>
-            <ThemedText style={[styles.linkText, { color: theme.link }]}>
-              Создать аккаунт
-            </ThemedText>
+          <Pressable style={styles.linkButton} onPress={() => navigate("/register")}>
+            <Text style={[styles.linkText, { color: theme.link }]}>Создать аккаунт</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -168,88 +107,23 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.xl,
-  },
-  header: {
-    alignItems: "center",
-    paddingTop: Spacing["2xl"],
-    marginBottom: Spacing["4xl"],
-  },
-  logo: {
-    fontSize: 48,
-    lineHeight: 56,
-    fontWeight: "700",
-    letterSpacing: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    marginTop: Spacing.sm,
-  },
-  form: {
-    width: "100%",
-    maxWidth: 400,
-    alignSelf: "center",
-  },
-  inputGroup: {
-    marginBottom: Spacing.lg,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: Spacing.sm,
-  },
-  input: {
-    height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.lg,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-  },
-  passwordInput: {
-    flex: 1,
-    borderWidth: 0,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  passwordToggle: {
-    paddingHorizontal: Spacing.md,
-    height: Spacing.inputHeight,
-    justifyContent: "center",
-    borderTopRightRadius: BorderRadius.sm,
-    borderBottomRightRadius: BorderRadius.sm,
-  },
-  button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: Spacing.lg,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  linkButton: {
-    alignItems: "center",
-    paddingVertical: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  linkText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: Spacing.xl, paddingTop: 80, paddingBottom: Spacing.xl },
+  header: { alignItems: "center", marginBottom: Spacing["4xl"] },
+  logo: { fontSize: 48, lineHeight: 56, fontWeight: "700", letterSpacing: 4 },
+  subtitle: { fontSize: 16, marginTop: Spacing.sm },
+  form: { width: "100%", maxWidth: 400, alignSelf: "center" },
+  errorBanner: { borderRadius: BorderRadius.xs, padding: Spacing.md, marginBottom: Spacing.lg },
+  errorText: { fontSize: 14, fontWeight: "500" },
+  inputGroup: { marginBottom: Spacing.lg },
+  label: { fontSize: 14, fontWeight: "500", marginBottom: Spacing.sm },
+  input: { height: Spacing.inputHeight, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.lg, fontSize: 16, borderWidth: 1 },
+  passwordRow: { flexDirection: "row", alignItems: "center", borderRadius: BorderRadius.sm, borderWidth: 1 },
+  passwordInput: { flex: 1, borderWidth: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 },
+  passwordToggle: { paddingHorizontal: Spacing.md, height: Spacing.inputHeight, justifyContent: "center", borderTopRightRadius: BorderRadius.sm, borderBottomRightRadius: BorderRadius.sm },
+  button: { height: Spacing.buttonHeight, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center", marginTop: Spacing.lg },
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { fontSize: 17, fontWeight: "600" },
+  linkButton: { alignItems: "center", paddingVertical: Spacing.lg, marginTop: Spacing.sm },
+  linkText: { fontSize: 16, fontWeight: "500" },
 });

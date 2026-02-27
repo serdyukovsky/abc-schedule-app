@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { pb } from "@/lib/pb";
+import type { RecordModel } from "pocketbase";
 
 export interface UserProfile {
   firstName: string;
@@ -7,14 +8,14 @@ export interface UserProfile {
   company: string;
   title: string;
   phone: string;
-  login: string;
+  login: string; // email
 }
 
 interface AuthContextType {
   isLoggedIn: boolean;
   isLoading: boolean;
   profile: UserProfile | null;
-  login: (loginId: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   register: (profile: UserProfile, password: string) => Promise<boolean>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -24,11 +25,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEYS = {
-  IS_LOGGED_IN: "@abc_auth_logged_in",
-  PROFILE: "@abc_auth_profile",
-  PASSWORD: "@abc_auth_password",
-};
+function recordToProfile(record: RecordModel): UserProfile {
+  return {
+    firstName: record.firstName || "",
+    lastName: record.lastName || "",
+    company: record.company || "",
+    title: record.title || "",
+    phone: record.phone || "",
+    login: record.email || "",
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,48 +42,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    loadAuthState();
+    // Check if there's a valid auth token stored
+    if (pb.authStore.isValid && pb.authStore.record) {
+      setProfile(recordToProfile(pb.authStore.record));
+      setIsLoggedIn(true);
+    }
+    setIsLoading(false);
+
+    // Listen for auth store changes
+    const unsub = pb.authStore.onChange((_token, record) => {
+      if (record) {
+        setProfile(recordToProfile(record));
+        setIsLoggedIn(true);
+      } else {
+        setProfile(null);
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => unsub();
   }, []);
 
-  const loadAuthState = async () => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const [loggedIn, profileJson] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.IS_LOGGED_IN),
-        AsyncStorage.getItem(STORAGE_KEYS.PROFILE),
-      ]);
-
-      if (loggedIn === "true" && profileJson) {
-        setProfile(JSON.parse(profileJson));
-        setIsLoggedIn(true);
-      }
-    } catch (error) {
-      console.error("Failed to load auth state:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const login = async (loginId: string, password: string): Promise<boolean> => {
-    try {
-      const [storedProfileJson, storedPassword] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.PROFILE),
-        AsyncStorage.getItem(STORAGE_KEYS.PASSWORD),
-      ]);
-
-      if (!storedProfileJson || !storedPassword) {
-        return false;
-      }
-
-      const storedProfile: UserProfile = JSON.parse(storedProfileJson);
-
-      if (storedProfile.login === loginId && storedPassword === password) {
-        setProfile(storedProfile);
-        setIsLoggedIn(true);
-        await AsyncStorage.setItem(STORAGE_KEYS.IS_LOGGED_IN, "true");
-        return true;
-      }
-
-      return false;
+      const result = await pb.collection("users").authWithPassword(email, password);
+      setProfile(recordToProfile(result.record));
+      setIsLoggedIn(true);
+      return true;
     } catch (error) {
       console.error("Login error:", error);
       return false;
@@ -86,13 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (newProfile: UserProfile, password: string): Promise<boolean> => {
     try {
-      await Promise.all([
-        AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(newProfile)),
-        AsyncStorage.setItem(STORAGE_KEYS.PASSWORD, password),
-        AsyncStorage.setItem(STORAGE_KEYS.IS_LOGGED_IN, "true"),
-      ]);
-
-      setProfile(newProfile);
+      await pb.collection("users").create({
+        email: newProfile.login,
+        password,
+        passwordConfirm: password,
+        firstName: newProfile.firstName,
+        lastName: newProfile.lastName,
+        company: newProfile.company,
+        title: newProfile.title,
+        phone: newProfile.phone,
+        name: `${newProfile.firstName} ${newProfile.lastName}`.trim(),
+      });
+      // Auto-login after registration
+      const result = await pb.collection("users").authWithPassword(newProfile.login, password);
+      setProfile(recordToProfile(result.record));
       setIsLoggedIn(true);
       return true;
     } catch (error) {
@@ -103,10 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
     try {
-      if (!profile) return false;
-      const updatedProfile: UserProfile = { ...profile, ...updates };
-      await AsyncStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updatedProfile));
-      setProfile(updatedProfile);
+      if (!pb.authStore.record) return false;
+      const data: Record<string, string> = {};
+      if (updates.firstName !== undefined) data.firstName = updates.firstName;
+      if (updates.lastName !== undefined) data.lastName = updates.lastName;
+      if (updates.company !== undefined) data.company = updates.company;
+      if (updates.title !== undefined) data.title = updates.title;
+      if (updates.firstName !== undefined || updates.lastName !== undefined) {
+        data.name = `${updates.firstName ?? profile?.firstName ?? ""} ${updates.lastName ?? profile?.lastName ?? ""}`.trim();
+      }
+      const updated = await pb.collection("users").update(pb.authStore.record.id, data);
+      setProfile(recordToProfile(updated));
       return true;
     } catch (error) {
       console.error("Update profile error:", error);
@@ -114,16 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const changePassword = async (
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<boolean> => {
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
-      const storedPassword = await AsyncStorage.getItem(STORAGE_KEYS.PASSWORD);
-      if (!storedPassword || storedPassword !== currentPassword) {
-        return false;
-      }
-      await AsyncStorage.setItem(STORAGE_KEYS.PASSWORD, newPassword);
+      if (!pb.authStore.record || !profile) return false;
+      await pb.collection("users").update(pb.authStore.record.id, {
+        oldPassword: currentPassword,
+        password: newPassword,
+        passwordConfirm: newPassword,
+      });
+      // Re-login with new password
+      await pb.collection("users").authWithPassword(profile.login, newPassword);
       return true;
     } catch (error) {
       console.error("Change password error:", error);
@@ -132,12 +137,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.IS_LOGGED_IN, "false");
-      setIsLoggedIn(false);
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    pb.authStore.clear();
+    setIsLoggedIn(false);
+    setProfile(null);
   };
 
   const getFullName = (): string => {
@@ -147,17 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        isLoading,
-        profile,
-        login,
-        register,
-        updateProfile,
-        changePassword,
-        logout,
-        getFullName,
-      }}
+      value={{ isLoggedIn, isLoading, profile, login, register, updateProfile, changePassword, logout, getFullName }}
     >
       {children}
     </AuthContext.Provider>
@@ -166,8 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }

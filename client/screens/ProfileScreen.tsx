@@ -1,19 +1,15 @@
 import React, { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, TextInput, Alert } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-
-import { ThemedText } from "@/components/ThemedText";
+import { useNavigate } from "react-router-dom";
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet } from "@/components/primitives";
+import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { profile, getFullName, logout, updateProfile, changePassword } = useAuth();
-  const navigation = useNavigation();
+  const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState(profile?.firstName ?? "");
@@ -23,407 +19,148 @@ export default function ProfileScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  const fullName = useMemo(() => getFullName(), [getFullName, profile?.firstName, profile?.lastName]);
-
-  const items = [
-    { label: "Электронная почта", value: profile?.login ?? "—" },
-    { label: "Телефон", value: profile?.phone ?? "—" },
-  ];
+  const fullName = useMemo(() => getFullName(), [getFullName, profile]);
 
   const handleSaveProfile = async () => {
-    const success = await updateProfile({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      company: company.trim(),
-      title: title.trim(),
-    });
-    if (!success) {
-      Alert.alert("Ошибка", "Не удалось сохранить профиль");
-      return;
-    }
+    const success = await updateProfile({ firstName: firstName.trim(), lastName: lastName.trim(), company: company.trim(), title: title.trim() });
+    if (!success) { setProfileError("Не удалось сохранить профиль"); return; }
+    setProfileError("");
     setIsEditing(false);
   };
 
   const handleSavePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Ошибка", "Заполните все поля");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Ошибка", "Пароли не совпадают");
-      return;
-    }
+    setPasswordError("");
+    setPasswordSuccess(false);
+    if (!currentPassword || !newPassword || !confirmPassword) { setPasswordError("Заполните все поля"); return; }
+    if (newPassword !== confirmPassword) { setPasswordError("Пароли не совпадают"); return; }
     const success = await changePassword(currentPassword, newPassword);
-    if (!success) {
-      Alert.alert("Ошибка", "Старый пароль неверен");
-      return;
-    }
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    Alert.alert("Готово", "Пароль обновлен");
+    if (!success) { setPasswordError("Старый пароль неверен"); return; }
+    setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+    setPasswordSuccess(true);
   };
 
+  const inputStyle = [styles.input, { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.separator }];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: Spacing.xl,
-            paddingBottom: insets.bottom + Spacing.xl,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            testID="profile-back"
-          >
-            <Feather name="chevron-left" size={22} color={theme.text} />
-          </Pressable>
-          <View style={styles.headerText}>
-            <ThemedText style={[styles.name, { color: theme.text }]}>
-              {fullName || "Профиль"}
-            </ThemedText>
-            {profile?.company ? (
-              <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-                {profile.company}
-              </ThemedText>
-            ) : null}
-          </View>
-        </View>
-
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-        {items.map((item, index) => (
-          <View key={item.label}>
-            <View style={styles.row}>
-              <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                {item.label}
-              </ThemedText>
-              <ThemedText style={[styles.value, { color: theme.text }]}>
-                {item.value}
-              </ThemedText>
-            </View>
-            {index < items.length - 1 ? (
-              <View style={[styles.divider, { backgroundColor: theme.separator }]} />
-            ) : null}
-          </View>
-        ))}
-      </View>
-
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={styles.sectionHeader}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-            Данные профиля
-          </ThemedText>
-          <Pressable onPress={() => setIsEditing((prev) => !prev)} testID="profile-edit">
-            <Feather
-              name={isEditing ? "x" : "edit-2"}
-              size={18}
-              color={isEditing ? theme.textSecondary : theme.link}
-            />
-          </Pressable>
-        </View>
-
-        <View style={styles.formRow}>
-          <View style={styles.field}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Имя
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={firstName}
-              onChangeText={setFirstName}
-              editable={isEditing}
-              placeholder="Имя"
-              placeholderTextColor={theme.textMuted}
-            />
-          </View>
-          <View style={styles.field}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Фамилия
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={lastName}
-              onChangeText={setLastName}
-              editable={isEditing}
-              placeholder="Фамилия"
-              placeholderTextColor={theme.textMuted}
-            />
-          </View>
-        </View>
-
-        <View style={styles.field}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Компания
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderColor: theme.separator,
-              },
-            ]}
-            value={company}
-            onChangeText={setCompany}
-            editable={isEditing}
-            placeholder="Компания"
-            placeholderTextColor={theme.textMuted}
-          />
-        </View>
-
-        <View style={styles.field}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Должность
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderColor: theme.separator,
-              },
-            ]}
-            value={title}
-            onChangeText={setTitle}
-            editable={isEditing}
-            placeholder="Должность"
-            placeholderTextColor={theme.textMuted}
-          />
-        </View>
-
-        {isEditing ? (
-          <Pressable
-            onPress={handleSaveProfile}
-            style={[styles.primaryButton, { backgroundColor: theme.link }]}
-            testID="profile-save"
-          >
-            <ThemedText style={[styles.primaryButtonText, { color: theme.buttonText }]}>
-              Сохранить
-            </ThemedText>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-        <View style={styles.sectionHeader}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-            Смена пароля
-          </ThemedText>
-        </View>
-
-        <View style={styles.field}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Старый пароль
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderColor: theme.separator,
-              },
-            ]}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            secureTextEntry
-            placeholder="Введите старый пароль"
-            placeholderTextColor={theme.textMuted}
-          />
-        </View>
-        <View style={styles.field}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Новый пароль
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderColor: theme.separator,
-              },
-            ]}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-            placeholder="Придумайте пароль"
-            placeholderTextColor={theme.textMuted}
-          />
-        </View>
-        <View style={styles.field}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Повторите пароль
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                color: theme.text,
-                borderColor: theme.separator,
-              },
-            ]}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            placeholder="Повторите пароль"
-            placeholderTextColor={theme.textMuted}
-          />
-        </View>
-        <Pressable
-          onPress={handleSavePassword}
-          style={[styles.primaryButton, { backgroundColor: theme.link }]}
-          testID="password-save"
-        >
-          <ThemedText style={[styles.primaryButtonText, { color: theme.buttonText }]}>
-            Сохранить
-          </ThemedText>
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <View style={[styles.topBar, { borderBottomColor: theme.separator }]}>
+        <Pressable onPress={() => navigate(-1 as any)} style={styles.backButton} testID="profile-back">
+          <Feather name="chevron-left" size={22} color={theme.text} />
         </Pressable>
+        <Text style={[styles.topBarTitle, { color: theme.text }]}>Профиль</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-        <Pressable
-          onPress={logout}
-          style={[styles.logoutButton, { backgroundColor: theme.backgroundSecondary }]}
-          testID="profile-logout"
-        >
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View>
+            <Text style={[styles.name, { color: theme.text }]}>{fullName || "Профиль"}</Text>
+            {profile?.company ? <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{profile.company}</Text> : null}
+          </View>
+        </View>
+
+        {/* Read-only info */}
+        <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+          {[{ label: "Электронная почта", value: profile?.login ?? "—" }, { label: "Телефон", value: profile?.phone ?? "—" }].map((item, i, arr) => (
+            <View key={item.label}>
+              <View style={styles.row}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>{item.label}</Text>
+                <Text style={[styles.value, { color: theme.text }]}>{item.value}</Text>
+              </View>
+              {i < arr.length - 1 ? <View style={[styles.divider, { backgroundColor: theme.separator }]} /> : null}
+            </View>
+          ))}
+        </View>
+
+        {/* Editable profile */}
+        <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Данные профиля</Text>
+            <Pressable onPress={() => setIsEditing((p) => !p)} testID="profile-edit">
+              <Feather name={isEditing ? "x" : "edit-2"} size={18} color={isEditing ? theme.textSecondary : theme.link} />
+            </Pressable>
+          </View>
+          {profileError ? <Text style={[styles.errorText, { color: theme.conflict }]}>{profileError}</Text> : null}
+          <View style={styles.formRow}>
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Имя</Text>
+              <TextInput style={inputStyle} value={firstName} onChangeText={setFirstName} editable={isEditing} placeholder="Имя" />
+            </View>
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Фамилия</Text>
+              <TextInput style={inputStyle} value={lastName} onChangeText={setLastName} editable={isEditing} placeholder="Фамилия" />
+            </View>
+          </View>
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Компания</Text>
+            <TextInput style={inputStyle} value={company} onChangeText={setCompany} editable={isEditing} placeholder="Компания" />
+          </View>
+          <View style={styles.field}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Должность</Text>
+            <TextInput style={inputStyle} value={title} onChangeText={setTitle} editable={isEditing} placeholder="Должность" />
+          </View>
+          {isEditing ? (
+            <Pressable onPress={handleSaveProfile} style={[styles.primaryButton, { backgroundColor: theme.link }]} testID="profile-save">
+              <Text style={[styles.primaryButtonText, { color: theme.buttonText }]}>Сохранить</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Change password */}
+        <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }, { marginBottom: Spacing.md }]}>Смена пароля</Text>
+          {passwordError ? <Text style={[styles.errorText, { color: theme.conflict }]}>{passwordError}</Text> : null}
+          {passwordSuccess ? <Text style={[styles.errorText, { color: theme.nowIndicator }]}>Пароль обновлён</Text> : null}
+          {[
+            { label: "Старый пароль", value: currentPassword, setter: setCurrentPassword, placeholder: "Введите старый пароль" },
+            { label: "Новый пароль", value: newPassword, setter: setNewPassword, placeholder: "Придумайте пароль" },
+            { label: "Повторите пароль", value: confirmPassword, setter: setConfirmPassword, placeholder: "Повторите пароль" },
+          ].map(({ label, value, setter, placeholder }) => (
+            <View key={label} style={styles.field}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
+              <TextInput style={inputStyle} value={value} onChangeText={setter} secureTextEntry placeholder={placeholder} />
+            </View>
+          ))}
+          <Pressable onPress={handleSavePassword} style={[styles.primaryButton, { backgroundColor: theme.link }]} testID="password-save">
+            <Text style={[styles.primaryButtonText, { color: theme.buttonText }]}>Сохранить</Text>
+          </Pressable>
+        </View>
+
+        <Pressable onPress={logout} style={[styles.logoutButton, { backgroundColor: theme.backgroundSecondary }]} testID="profile-logout">
           <Feather name="log-out" size={18} color={theme.conflict} />
-          <ThemedText style={[styles.logoutText, { color: theme.conflict }]}>
-            Выйти
-          </ThemedText>
+          <Text style={[styles.logoutText, { color: theme.conflict }]}>Выйти</Text>
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    paddingTop: Spacing.xl,
-    gap: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerText: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: "600",
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  card: {
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  row: {
-    paddingVertical: Spacing.sm,
-  },
-  label: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  divider: {
-    height: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  sectionAction: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  formRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  field: {
-    flex: 1,
-    marginBottom: Spacing.md,
-  },
-  input: {
-    height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.lg,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  primaryButton: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: Spacing.sm,
-  },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  logoutButton: {
-    marginTop: Spacing.xl,
-    borderRadius: BorderRadius.full,
-    height: Spacing.buttonHeight,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: Spacing.sm,
-  },
-  logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  container: { flex: 1 },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, paddingTop: 16 },
+  backButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  topBarTitle: { flex: 1, textAlign: "center", fontSize: 17, fontWeight: "600" },
+  content: { paddingTop: Spacing.xl, gap: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing["3xl"] },
+  header: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
+  name: { fontSize: 22, fontWeight: "600" },
+  subtitle: { fontSize: 14, marginTop: 4 },
+  card: { borderRadius: BorderRadius.lg, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  row: { paddingVertical: Spacing.sm },
+  label: { fontSize: 13, marginBottom: 4 },
+  value: { fontSize: 16, fontWeight: "500" },
+  divider: { height: 1 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.md },
+  sectionTitle: { fontSize: 16, fontWeight: "600" },
+  formRow: { flexDirection: "row", gap: Spacing.md },
+  field: { flex: 1, marginBottom: Spacing.md },
+  input: { height: Spacing.inputHeight, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.lg, fontSize: 16, borderWidth: 1 },
+  primaryButton: { height: Spacing.buttonHeight, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center", marginTop: Spacing.sm },
+  primaryButtonText: { fontSize: 16, fontWeight: "600" },
+  errorText: { fontSize: 14, marginBottom: Spacing.sm },
+  logoutButton: { marginTop: Spacing.xl, borderRadius: BorderRadius.full, height: Spacing.buttonHeight, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: Spacing.sm },
+  logoutText: { fontSize: 16, fontWeight: "600" },
 });

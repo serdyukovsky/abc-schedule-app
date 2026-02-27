@@ -1,43 +1,10 @@
 import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { Text } from "@/components/primitives";
+import { useTheme } from "@/hooks/useTheme";
 
-import { ThemedText } from "@/components/ThemedText";
-import { Spacing } from "@/constants/theme";
+interface HeaderTitleProps { title: string }
 
-interface HeaderTitleProps {
-  title: string;
-  showIcon?: boolean;
+export function HeaderTitle({ title }: HeaderTitleProps) {
+  const { theme } = useTheme();
+  return <Text style={{ fontSize: 17, fontWeight: "600", color: theme.text }}>{title}</Text>;
 }
-
-export function HeaderTitle({ title, showIcon = true }: HeaderTitleProps) {
-  return (
-    <View style={styles.container}>
-      {showIcon ? (
-        <Image
-          source={require("../../assets/images/icon.png")}
-          style={styles.icon}
-          resizeMode="contain"
-        />
-      ) : null}
-      <ThemedText style={styles.title}>{title}</ThemedText>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
-  icon: {
-    width: 28,
-    height: 28,
-    marginRight: Spacing.sm,
-    borderRadius: 6,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-});

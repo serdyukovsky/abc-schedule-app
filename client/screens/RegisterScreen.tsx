@@ -1,29 +1,32 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  View,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import * as Haptics from "expo-haptics";
-
-import { ThemedText } from "@/components/ThemedText";
+  View, Text, Pressable, ScrollView, TextInput,
+  KeyboardAvoidingView, StyleSheet,
+} from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
+const formatPhone = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  let norm = digits.startsWith("8") ? `7${digits.slice(1)}` : digits.startsWith("7") ? digits : `7${digits}`;
+  const local = norm.slice(1, 11);
+  const p = [local.slice(0,3), local.slice(3,6), local.slice(6,8), local.slice(8,10)];
+  let f = "+7";
+  if (p[0]) f += ` (${p[0]}`;
+  if (p[0]?.length === 3) f += ")";
+  if (p[1]) f += ` ${p[1]}`;
+  if (p[2]) f += `-${p[2]}`;
+  if (p[3]) f += `-${p[3]}`;
+  return f;
+};
+
 export default function RegisterScreen() {
-  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigate = useNavigate();
   const { register } = useAuth();
-  const topPadding = insets.top + Spacing["5xl"];
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -33,272 +36,81 @@ export default function RegisterScreen() {
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const formatPhoneNumber = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (!digits) return "";
-
-    let normalized = digits;
-    if (normalized.startsWith("8")) {
-      normalized = `7${normalized.slice(1)}`;
-    } else if (!normalized.startsWith("7")) {
-      normalized = `7${normalized}`;
-    }
-
-    const local = normalized.slice(1, 11);
-    const parts = [
-      local.slice(0, 3),
-      local.slice(3, 6),
-      local.slice(6, 8),
-      local.slice(8, 10),
-    ];
-
-    let formatted = "+7";
-    if (parts[0]) formatted += ` (${parts[0]}`;
-    if (parts[0]?.length === 3) formatted += ")";
-    if (parts[1]) formatted += ` ${parts[1]}`;
-    if (parts[2]) formatted += `-${parts[2]}`;
-    if (parts[3]) formatted += `-${parts[3]}`;
-
-    return formatted;
-  };
+  const [error, setError] = useState("");
 
   const handleRegister = async () => {
-    if (
-      !firstName.trim() ||
-      !lastName.trim() ||
-      !phone.trim() ||
-      !loginId.trim() ||
-      !password.trim()
-    ) {
-      Alert.alert("Ошибка", "Заполните обязательные поля");
+    setError("");
+    if (!firstName.trim() || !lastName.trim() || !phone.trim() || !loginId.trim() || !password.trim()) {
+      setError("Заполните обязательные поля");
       return;
     }
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsLoading(true);
-
     const success = await register(
-      {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim(),
-        company: company.trim(),
-        title: title.trim(),
-        login: loginId.trim(),
-      },
+      { firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim(), company: company.trim(), title: title.trim(), login: loginId.trim() },
       password
     );
-
     setIsLoading(false);
-
-    if (!success) {
-      Alert.alert("Ошибка", "Не удалось создать аккаунт");
-    }
+    if (!success) setError("Не удалось создать аккаунт");
   };
 
-  const handleGoToLogin = () => {
-    Haptics.selectionAsync();
-    navigation.goBack();
-  };
+  const inputStyle = [styles.input, { backgroundColor: theme.backgroundDefault, color: theme.text, borderColor: theme.separator }];
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: topPadding, paddingBottom: insets.bottom + Spacing.xl },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <ThemedText style={[styles.title, { color: theme.text }]}>
-            Регистрация
-          </ThemedText>
+          <Text style={[styles.title, { color: theme.text }]}>Регистрация</Text>
         </View>
 
         <View style={styles.form}>
+          {error ? (
+            <View style={[styles.errorBanner, { backgroundColor: `${theme.conflict}18` }]}>
+              <Text style={[styles.errorText, { color: theme.conflict }]}>{error}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.row}>
             <View style={[styles.inputGroup, styles.halfWidth]}>
-              <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                Имя *
-              </ThemedText>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.backgroundDefault,
-                    color: theme.text,
-                    borderColor: theme.separator,
-                  },
-                ]}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="Иван"
-                placeholderTextColor={theme.textMuted}
-                autoCapitalize="words"
-                testID="input-firstName"
-              />
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Имя *</Text>
+              <TextInput style={inputStyle} value={firstName} onChangeText={setFirstName} placeholder="Иван" autoCapitalize="words" testID="input-firstName" />
             </View>
-
             <View style={[styles.inputGroup, styles.halfWidth]}>
-              <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-                Фамилия *
-              </ThemedText>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.backgroundDefault,
-                    color: theme.text,
-                    borderColor: theme.separator,
-                  },
-                ]}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Петров"
-                placeholderTextColor={theme.textMuted}
-                autoCapitalize="words"
-                testID="input-lastName"
-              />
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Фамилия *</Text>
+              <TextInput style={inputStyle} value={lastName} onChangeText={setLastName} placeholder="Петров" autoCapitalize="words" testID="input-lastName" />
             </View>
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Телефон *
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={phone}
-              onChangeText={(value) => setPhone(formatPhoneNumber(value))}
-              placeholder="+7 (999) 123-45-67"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="phone-pad"
-              textContentType="telephoneNumber"
-              testID="input-phone"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Телефон *</Text>
+            <TextInput style={inputStyle} value={phone} onChangeText={(v) => setPhone(formatPhone(v))} placeholder="+7 (999) 123-45-67" keyboardType="phone-pad" testID="input-phone" />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Компания
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={company}
-              onChangeText={setCompany}
-              placeholder="Название компании"
-              placeholderTextColor={theme.textMuted}
-              testID="input-company"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Компания</Text>
+            <TextInput style={inputStyle} value={company} onChangeText={setCompany} placeholder="Название компании" testID="input-company" />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Должность
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Ваша должность"
-              placeholderTextColor={theme.textMuted}
-              testID="input-title"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Должность</Text>
+            <TextInput style={inputStyle} value={title} onChangeText={setTitle} placeholder="Ваша должность" testID="input-title" />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Электронная почта *
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={loginId}
-              onChangeText={setLoginId}
-              placeholder="user@domain.ru"
-              placeholderTextColor={theme.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              textContentType="emailAddress"
-              testID="input-login"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Электронная почта *</Text>
+            <TextInput style={inputStyle} value={loginId} onChangeText={setLoginId} placeholder="user@domain.ru" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} testID="input-login" />
           </View>
 
           <View style={styles.inputGroup}>
-            <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Пароль *
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: theme.backgroundDefault,
-                  color: theme.text,
-                  borderColor: theme.separator,
-                },
-              ]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Придумайте пароль"
-              placeholderTextColor={theme.textMuted}
-              secureTextEntry
-              testID="input-password"
-            />
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Пароль *</Text>
+            <TextInput style={inputStyle} value={password} onChangeText={setPassword} placeholder="Придумайте пароль" secureTextEntry testID="input-password" />
           </View>
 
-          <Pressable
-            style={[
-              styles.button,
-              { backgroundColor: theme.link },
-              isLoading && styles.buttonDisabled,
-            ]}
-            onPress={handleRegister}
-            disabled={isLoading}
-            testID="button-register"
-          >
-            <ThemedText style={[styles.buttonText, { color: theme.buttonText }]}>
-              {isLoading ? "Регистрация..." : "Зарегистрироваться"}
-            </ThemedText>
+          <Pressable style={[styles.button, { backgroundColor: theme.link }, isLoading ? styles.buttonDisabled : undefined]} onPress={handleRegister} disabled={isLoading} testID="button-register">
+            <Text style={[styles.buttonText, { color: theme.buttonText }]}>{isLoading ? "Регистрация..." : "Зарегистрироваться"}</Text>
           </Pressable>
 
-          <Pressable style={styles.linkButton} onPress={handleGoToLogin}>
-            <ThemedText style={[styles.linkText, { color: theme.link }]}>
-              У меня уже есть аккаунт
-            </ThemedText>
+          <Pressable style={styles.linkButton} onPress={() => navigate("/login")}>
+            <Text style={[styles.linkText, { color: theme.link }]}>У меня уже есть аккаунт</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -307,70 +119,21 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.xl,
-  },
-  header: {
-    paddingTop: Spacing["2xl"],
-    marginBottom: Spacing["2xl"],
-  },
-  title: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "700",
-  },
-  form: {
-    width: "100%",
-    maxWidth: 400,
-    alignSelf: "center",
-  },
-  row: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  halfWidth: {
-    flex: 1,
-  },
-  inputGroup: {
-    marginBottom: Spacing.lg,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: Spacing.sm,
-  },
-  input: {
-    height: Spacing.inputHeight,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.lg,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.sm,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: Spacing.lg,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  linkButton: {
-    alignItems: "center",
-    paddingVertical: Spacing.lg,
-    marginTop: Spacing.sm,
-  },
-  linkText: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  container: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: Spacing.xl, paddingTop: 60, paddingBottom: Spacing.xl },
+  header: { marginBottom: Spacing["2xl"] },
+  title: { fontSize: 28, lineHeight: 34, fontWeight: "700" },
+  form: { width: "100%", maxWidth: 400, alignSelf: "center" },
+  errorBanner: { borderRadius: BorderRadius.xs, padding: Spacing.md, marginBottom: Spacing.lg },
+  errorText: { fontSize: 14, fontWeight: "500" },
+  row: { flexDirection: "row", gap: Spacing.md },
+  halfWidth: { flex: 1 },
+  inputGroup: { marginBottom: Spacing.lg },
+  label: { fontSize: 14, fontWeight: "500", marginBottom: Spacing.sm },
+  input: { height: Spacing.inputHeight, borderRadius: BorderRadius.sm, paddingHorizontal: Spacing.lg, fontSize: 16, borderWidth: 1 },
+  button: { height: Spacing.buttonHeight, borderRadius: BorderRadius.sm, alignItems: "center", justifyContent: "center", marginTop: Spacing.lg },
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { fontSize: 17, fontWeight: "600" },
+  linkButton: { alignItems: "center", paddingVertical: Spacing.lg, marginTop: Spacing.sm },
+  linkText: { fontSize: 16, fontWeight: "500" },
 });

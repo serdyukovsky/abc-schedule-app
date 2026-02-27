@@ -1,8 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet, Pressable, View } from "react-native";
-import * as Haptics from "expo-haptics";
-
-import { ThemedText } from "@/components/ThemedText";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
@@ -14,43 +11,19 @@ interface FilterChipsProps {
 
 export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
   const { theme } = useTheme();
-
-  const handleSelect = (option: string) => {
-    Haptics.selectionAsync();
-    onSelect(option);
-  };
-
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.scrollView}
-      contentContainerStyle={styles.container}
-    >
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.container}>
       {options.map((option) => {
         const isSelected = option === selected;
         return (
           <Pressable
             key={option}
-            onPress={() => handleSelect(option)}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: isSelected ? theme.text : theme.backgroundSecondary,
-              },
-            ]}
-            testID={`filter-chip-${option}`}
+            onPress={() => onSelect(option)}
+            style={[styles.chip, { backgroundColor: isSelected ? theme.link : theme.backgroundSecondary }]}
           >
-            <ThemedText
-              style={[
-                styles.chipText,
-                {
-                  color: isSelected ? theme.backgroundRoot : theme.text,
-                },
-              ]}
-            >
+            <Text style={[styles.chipText, { color: isSelected ? theme.buttonText : theme.textSecondary }]}>
               {option}
-            </ThemedText>
+            </Text>
           </Pressable>
         );
       })}
@@ -59,23 +32,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flexGrow: 0,
-  },
-  container: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: BorderRadius.full,
-    alignSelf: "flex-start",
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
+  container: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, gap: Spacing.sm, flexDirection: "row" },
+  chip: { paddingHorizontal: Spacing.md, paddingVertical: 6, borderRadius: BorderRadius.full },
+  chipText: { fontSize: 13, fontWeight: "500" },
 });

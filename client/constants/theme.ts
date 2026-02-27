@@ -1,5 +1,3 @@
-import { Platform } from "react-native";
-
 const tintColorLight = "#007AFF";
 const tintColorDark = "#0A84FF";
 
@@ -70,72 +68,25 @@ export const BorderRadius = {
 };
 
 export const Typography = {
-  h1: {
-    fontSize: 34,
-    lineHeight: 41,
-    fontWeight: "600" as const,
-  },
-  h2: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "600" as const,
-  },
-  h3: {
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: "600" as const,
-  },
-  h4: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: "600" as const,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "400" as const,
-  },
-  small: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "400" as const,
-  },
-  caption: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "400" as const,
-  },
+  h1: { fontSize: 34, lineHeight: 41, fontWeight: "600" as const },
+  h2: { fontSize: 28, lineHeight: 34, fontWeight: "600" as const },
+  h3: { fontSize: 22, lineHeight: 28, fontWeight: "600" as const },
+  h4: { fontSize: 17, lineHeight: 22, fontWeight: "600" as const },
+  body: { fontSize: 15, lineHeight: 20, fontWeight: "400" as const },
+  small: { fontSize: 13, lineHeight: 18, fontWeight: "400" as const },
+  caption: { fontSize: 13, lineHeight: 18, fontWeight: "400" as const },
   timeLabel: {
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600" as const,
     textTransform: "uppercase" as const,
   },
-  link: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: "600" as const,
-  },
+  link: { fontSize: 17, lineHeight: 22, fontWeight: "600" as const },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    sans: "system-ui",
-    serif: "ui-serif",
-    rounded: "ui-rounded",
-    mono: "ui-monospace",
-  },
-  default: {
-    sans: "normal",
-    serif: "serif",
-    rounded: "normal",
-    mono: "monospace",
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const Fonts = {
+  sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  serif: "Georgia, 'Times New Roman', serif",
+  rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+  mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+};

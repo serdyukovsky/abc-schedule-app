@@ -1,34 +1,14 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-
-import { ThemedText } from "@/components/ThemedText";
+import { Text } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
 
-interface TimeLabelProps {
-  time: string;
-}
+interface TimeLabelProps { style?: any; children: React.ReactNode }
 
-export function TimeLabel({ time }: TimeLabelProps) {
+export function TimeLabel({ style, children }: TimeLabelProps) {
   const { theme } = useTheme();
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <ThemedText style={[styles.text, { color: theme.textSecondary }]}>
-        {time}
-      </ThemedText>
-    </View>
+    <Text style={[{ fontSize: 13, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, color: theme.textSecondary }, style]}>
+      {children}
+    </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-  },
-  text: {
-    fontSize: 13,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-});
