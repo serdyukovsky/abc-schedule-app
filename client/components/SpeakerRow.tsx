@@ -1,82 +1,44 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
-
-import { ThemedText } from "@/components/ThemedText";
+import { View, Text, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
-interface SpeakerRowProps {
-  name: string;
-  size?: number;
-}
+interface SpeakerRowProps { name: string; photoUrl?: string; size?: number }
 
 function getInitials(name: string): string {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
-export function SpeakerRow({ name, size = 22 }: SpeakerRowProps) {
+export function SpeakerRow({ name, photoUrl, size = 22 }: SpeakerRowProps) {
   const { theme } = useTheme();
-
-  if (!name) return null;
-
   const initials = getInitials(name);
-  const fontSize = size * 0.4;
-
+  const fontSize = Math.round(size * 0.42);
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.avatar,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: theme.backgroundSecondary,
-          },
-        ]}
-      >
-        <ThemedText
-          style={[
-            styles.initials,
-            {
-              fontSize,
-              color: theme.textSecondary,
-            },
-          ]}
-        >
-          {initials}
-        </ThemedText>
-      </View>
-      <ThemedText
-        style={[styles.name, { color: theme.textSecondary }]}
-        numberOfLines={1}
-      >
-        {name}
-      </ThemedText>
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt={name}
+          style={{ width: size, height: size, borderRadius: size / 2, objectFit: "cover" }}
+        />
+      ) : (
+        <View style={[styles.avatar, { backgroundColor: theme.backgroundSecondary, width: size, height: size, borderRadius: size / 2 }]}>
+          <Text style={{ fontSize, lineHeight: size, color: theme.textSecondary, fontWeight: "600" }}>{initials}</Text>
+        </View>
+      )}
+      <Text style={[styles.name, { color: theme.textSecondary }]}>{name}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  avatar: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  initials: {
-    fontWeight: "600",
-  },
-  name: {
-    fontSize: 13,
-    flex: 1,
-  },
+  container: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  avatar: { alignItems: "center", justifyContent: "center" },
+  name: { fontSize: 13, fontWeight: "500" },
 });

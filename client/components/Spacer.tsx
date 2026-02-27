@@ -1,20 +1,7 @@
-import { View } from "react-native";
+import React from "react";
 
-type Props = {
-  width?: number;
-  height?: number;
-};
+interface SpacerProps { size?: number; horizontal?: boolean }
 
-export default function Spacer(props: Props) {
-  const width: number = props.width ?? 1;
-  const height: number = props.height ?? 1;
-
-  return (
-    <View
-      style={{
-        width,
-        height,
-      }}
-    />
-  );
+export function Spacer({ size = 8, horizontal = false }: SpacerProps) {
+  return <div style={horizontal ? { width: size } : { height: size }} />;
 }

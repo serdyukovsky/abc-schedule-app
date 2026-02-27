@@ -1,39 +1,53 @@
-import React from "react";
-import { StyleSheet, View, ActivityIndicator } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { KeyboardProvider } from "react-native-keyboard-controller";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
-
+import React, { Suspense } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
-
-import RootStackNavigator from "@/navigation/RootStackNavigator";
-import AuthNavigator from "@/navigation/AuthNavigator";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { EventProvider } from "@/context/EventContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { EventProvider } from "@/context/EventContext";
+import { ActivityIndicator, View } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
-function AppContent() {
-  const { isLoggedIn, isLoading } = useAuth();
+// Screens
+import LoginScreen from "@/screens/LoginScreen";
+import RegisterScreen from "@/screens/RegisterScreen";
+import MainScheduleScreen from "@/screens/MainScheduleScreen";
+import EventDetailsScreen from "@/screens/EventDetailsScreen";
+import ProfileScreen from "@/screens/ProfileScreen";
+
+function LoadingScreen() {
   const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.backgroundRoot }}>
+      <ActivityIndicator size="large" color={theme.link} />
+    </View>
+  );
+}
 
-  if (isLoading) {
+function AppRoutes() {
+  const { isLoggedIn, isLoading } = useAuth();
+
+  if (isLoading) return <LoadingScreen />;
+
+  if (!isLoggedIn) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.backgroundRoot }]}>
-        <ActivityIndicator size="large" color={theme.link} />
-      </View>
+      <Routes>
+        <Route path="/login" element={<LoginScreen />} />
+        <Route path="/register" element={<RegisterScreen />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 
-  return isLoggedIn ? (
+  return (
     <EventProvider>
-      <RootStackNavigator />
+      <Routes>
+        <Route path="/" element={<MainScheduleScreen />} />
+        <Route path="/event/:eventId" element={<EventDetailsScreen />} />
+        <Route path="/profile" element={<ProfileScreen />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </EventProvider>
-  ) : (
-    <AuthNavigator />
   );
 }
 
@@ -41,30 +55,14 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <GestureHandlerRootView style={styles.root}>
-            <KeyboardProvider>
-              <AuthProvider>
-                <NavigationContainer>
-                  <AppContent />
-                </NavigationContainer>
-              </AuthProvider>
-              <StatusBar style="auto" />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
-        </SafeAreaProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <div className="phone-shell">
+              <AppRoutes />
+            </div>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

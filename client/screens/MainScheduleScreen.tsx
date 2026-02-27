@@ -1,10 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Keyboard, Platform } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
+import React, { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { View, Text, ScrollView, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
 import { Spacing } from "@/constants/theme";
@@ -16,398 +12,143 @@ import { TimeSlotRow } from "@/components/TimeSlotRow";
 import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
 import { ConflictModal } from "@/components/ConflictModal";
-import { ThemedText } from "@/components/ThemedText";
-import { Event, eventDays, tracks } from "@/data/mockEvents";
-import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { AppHeader } from "@/components/AppHeader";
+import { Event } from "@/lib/pb-types";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface TimeSlot {
-  time: string;
-  endTime?: string;
-  events: Event[];
-}
-
-interface DaySection {
-  date: Date;
-  dateLabel: string;
-  slots: TimeSlot[];
-}
+interface TimeSlot { time: string; endTime?: string; events: Event[] }
+interface DaySection { date: Date; dateLabel: string; slots: TimeSlot[] }
 
 const SEGMENTS = ["Расписание", "Моё расписание"];
 
+const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
+const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "long", month: "short", day: "numeric" });
+const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
 export default function MainScheduleScreen() {
-  const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
   const { theme } = useTheme();
-  const navigation = useNavigation<NavigationProp>();
-  const { events, togglePlanned, hasConflict, getPlannedEvents } = useEvents();
+  const navigate = useNavigate();
+  const { events, tracks: trackRecords, togglePlanned, hasConflict, getPlannedEvents, eventDays } = useEvents();
+
+  const trackNames = useMemo(() => ["Все", ...trackRecords.map((t) => t.name)], [trackRecords]);
 
   const [selectedSegment, setSelectedSegment] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(eventDays[0].date);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Auto-select first date when eventDays load
+  const currentDate = selectedDate ?? eventDays[0]?.date ?? new Date();
   const [selectedTrack, setSelectedTrack] = useState("Все");
   const [conflictModalVisible, setConflictModalVisible] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<Event | null>(null);
   const [conflictingEvent, setConflictingEvent] = useState<Event | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
 
-  const isSameDay = (d1: Date, d2: Date) => {
-    return (
-      d1.getFullYear() === d2.getFullYear() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getDate() === d2.getDate()
-    );
+  const matchesSearch = (event: Event, q: string) => {
+    if (!q.trim()) return true;
+    const lq = q.toLowerCase().trim();
+    return event.title.toLowerCase().includes(lq) || event.speakerName.toLowerCase().includes(lq) ||
+      event.location.toLowerCase().includes(lq) || event.track.toLowerCase().includes(lq);
   };
 
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return isSameDay(date, today);
-  };
+  const filteredEvents = useMemo(() => events.filter((e) =>
+    isSameDay(e.startTime, currentDate) &&
+    (selectedTrack === "Все" || e.track === selectedTrack) &&
+    matchesSearch(e, searchQuery)
+  ), [events, currentDate, selectedTrack, searchQuery]);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("ru-RU", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
+  const buildSlots = (evts: Event[]): TimeSlot[] => {
+    const grouped: Record<string, Event[]> = {};
+    evts.forEach((e) => { const k = formatTime(e.startTime); if (!grouped[k]) grouped[k] = []; grouped[k].push(e); });
+    return Object.keys(grouped).sort().map((time) => {
+      const slotEvts = grouped[time];
+      const latest = slotEvts.reduce((l, e) => e.endTime > l ? e.endTime : l, slotEvts[0].endTime);
+      return { time, endTime: formatTime(latest), events: slotEvts };
     });
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString("ru-RU", {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
+  const scheduleTimeSlots = useMemo(() => buildSlots(filteredEvents), [filteredEvents]);
+
+  const myScheduleSections = useMemo((): DaySection[] => {
+    const byDay: Record<string, Event[]> = {};
+    plannedEvents.forEach((e) => { const k = getDateKey(e.startTime); if (!byDay[k]) byDay[k] = []; byDay[k].push(e); });
+    return Object.keys(byDay).sort().map((k) => {
+      const dayEvts = byDay[k];
+      return { date: dayEvts[0].startTime, dateLabel: formatDate(dayEvts[0].startTime), slots: buildSlots(dayEvts) };
     });
-  };
-
-  const getDateKey = (date: Date) => {
-    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  };
-
-  const matchesSearch = (event: Event, query: string): boolean => {
-    if (!query.trim()) return true;
-    const lowerQuery = query.toLowerCase().trim();
-    return (
-      event.title.toLowerCase().includes(lowerQuery) ||
-      event.speakerName.toLowerCase().includes(lowerQuery) ||
-      event.location.toLowerCase().includes(lowerQuery) ||
-      event.track.toLowerCase().includes(lowerQuery)
-    );
-  };
-
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      const matchesDate = isSameDay(event.startTime, selectedDate);
-      const matchesTrack = selectedTrack === "Все" || event.track === selectedTrack;
-      const matchesSearchQuery = matchesSearch(event, searchQuery);
-      return matchesDate && matchesTrack && matchesSearchQuery;
-    });
-  }, [events, selectedDate, selectedTrack, searchQuery]);
-
-  const scheduleTimeSlots = useMemo(() => {
-    const grouped: { [key: string]: Event[] } = {};
-    
-    filteredEvents.forEach((event) => {
-      const timeKey = formatTime(event.startTime);
-      if (!grouped[timeKey]) {
-        grouped[timeKey] = [];
-      }
-      grouped[timeKey].push(event);
-    });
-
-    const slots: TimeSlot[] = Object.keys(grouped)
-      .sort()
-      .map((time) => {
-        const slotEvents = grouped[time];
-        const latestEndTime = slotEvents.reduce((latest, event) => {
-          return event.endTime > latest ? event.endTime : latest;
-        }, slotEvents[0].endTime);
-        
-        return {
-          time,
-          endTime: formatTime(latestEndTime),
-          events: slotEvents,
-        };
-      });
-
-    return slots;
-  }, [filteredEvents]);
-
-  const myScheduleSections = useMemo(() => {
-    const byDay: { [key: string]: Event[] } = {};
-    
-    plannedEvents.forEach((event) => {
-      const dayKey = getDateKey(event.startTime);
-      if (!byDay[dayKey]) {
-        byDay[dayKey] = [];
-      }
-      byDay[dayKey].push(event);
-    });
-
-    const sections: DaySection[] = [];
-
-    Object.keys(byDay)
-      .sort()
-      .forEach((dayKey) => {
-        const dayEvents = byDay[dayKey];
-        const grouped: { [key: string]: Event[] } = {};
-
-        dayEvents.forEach((event) => {
-          const timeKey = formatTime(event.startTime);
-          if (!grouped[timeKey]) {
-            grouped[timeKey] = [];
-          }
-          grouped[timeKey].push(event);
-        });
-
-        const slots: TimeSlot[] = Object.keys(grouped)
-          .sort()
-          .map((time) => {
-            const slotEvents = grouped[time];
-            const latestEndTime = slotEvents.reduce((latest, event) => {
-              return event.endTime > latest ? event.endTime : latest;
-            }, slotEvents[0].endTime);
-            
-            return {
-              time,
-              endTime: formatTime(latestEndTime),
-              events: slotEvents,
-            };
-          });
-
-        sections.push({
-          date: dayEvents[0].startTime,
-          dateLabel: formatDate(dayEvents[0].startTime),
-          slots,
-        });
-      });
-
-    return sections;
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
-    Keyboard.dismiss();
-    navigation.navigate("EventDetails", { eventId: event.id });
-  }, [navigation]);
+    navigate(`/event/${event.id}`);
+  }, [navigate]);
 
   const handleTogglePlanned = useCallback((eventId: string) => {
-    const event = events.find(e => e.id === eventId);
+    const event = events.find((e) => e.id === eventId);
     if (!event) return;
-
     if (!event.isPlanned) {
       const conflict = hasConflict(event);
-      if (conflict) {
-        setPendingEvent(event);
-        setConflictingEvent(conflict);
-        setConflictModalVisible(true);
-        return;
-      }
+      if (conflict) { setPendingEvent(event); setConflictingEvent(conflict); setConflictModalVisible(true); return; }
     }
-
     togglePlanned(eventId);
   }, [events, hasConflict, togglePlanned]);
 
-  const handleReplace = () => {
-    if (pendingEvent && conflictingEvent) {
-      togglePlanned(conflictingEvent.id);
-      togglePlanned(pendingEvent.id);
-    }
-    setConflictModalVisible(false);
-    setPendingEvent(null);
-    setConflictingEvent(null);
-  };
-
-  const handleKeepBoth = () => {
-    if (pendingEvent) {
-      togglePlanned(pendingEvent.id);
-    }
-    setConflictModalVisible(false);
-    setPendingEvent(null);
-    setConflictingEvent(null);
-  };
-
-  const handleCancelConflict = () => {
-    setConflictModalVisible(false);
-    setPendingEvent(null);
-    setConflictingEvent(null);
-  };
-
-  const handleSearchPress = () => {
-    setIsSearching(true);
-  };
-
-  const handleSearchClose = () => {
-    setIsSearching(false);
-    setSearchQuery("");
-    Keyboard.dismiss();
-  };
-
-  useEffect(() => {
-    if (!isSearching) {
-      setKeyboardHeight(0);
-      return;
-    }
-
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (event) => {
-      setKeyboardHeight(event.endCoordinates?.height ?? 0);
-    });
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [isSearching]);
-
-  const showNowIndicator = isScheduleView && isToday(selectedDate);
-
-  const hasEventsToday = plannedEvents.some((event) => {
-    const today = new Date();
-    return isSameDay(event.startTime, today);
-  });
-
-  const renderScheduleContent = () => (
-    <>
-      <FilterChips
-        options={tracks}
-        selected={selectedTrack}
-        onSelect={setSelectedTrack}
-      />
-
-      {showNowIndicator ? <NowIndicator /> : null}
-
-      {scheduleTimeSlots.length > 0 ? (
-        scheduleTimeSlots.map((slot, index) => (
-          <View key={slot.time}>
-            {index > 0 ? (
-              <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} />
-            ) : null}
-            <TimeSlotRow
-              time={slot.time}
-              endTime={slot.endTime}
-              events={slot.events}
-              onEventPress={handleEventPress}
-              onTogglePlanned={handleTogglePlanned}
-              hasConflict={hasConflict}
-            />
-          </View>
-        ))
-      ) : (
-        <EmptyState
-          title={searchQuery ? "Ничего не найдено" : "Нет событий"}
-          message={
-            searchQuery
-              ? `По запросу «${searchQuery}» ничего не найдено.`
-              : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`
-          }
-        />
-      )}
-    </>
-  );
-
-  const renderMyScheduleContent = () => (
-    <>
-      {!isScheduleView && hasEventsToday ? <NowIndicator /> : null}
-
-      {myScheduleSections.length > 0 ? (
-        myScheduleSections.map((section, sectionIndex) => (
-          <View key={section.dateLabel}>
-            <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
-              <ThemedText style={[styles.dateLabel, { color: theme.text }]}>
-                {section.dateLabel}
-              </ThemedText>
-            </View>
-
-            {section.slots.map((slot, slotIndex) => (
-              <View key={slot.time}>
-                {slotIndex > 0 ? (
-                  <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} />
-                ) : null}
-                <TimeSlotRow
-                  time={slot.time}
-                  endTime={slot.endTime}
-                  events={slot.events}
-                  onEventPress={handleEventPress}
-                  onTogglePlanned={handleTogglePlanned}
-                  hasConflict={hasConflict}
-                  showSwipeActions={false}
-                />
-              </View>
-            ))}
-
-            {sectionIndex < myScheduleSections.length - 1 ? (
-              <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} />
-            ) : null}
-          </View>
-        ))
-      ) : (
-        <EmptyState
-          title="Нет запланированных событий"
-          message="Нажмите + на карточке события, чтобы добавить его сюда."
-        />
-      )}
-    </>
-  );
+  const showNowIndicator = isScheduleView && isSameDay(currentDate, new Date());
+  const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, new Date()));
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <View style={{ paddingTop: headerHeight }}>
-        <SegmentedControl
-          segments={SEGMENTS}
-          selectedIndex={selectedSegment}
-          onSelect={setSelectedSegment}
-        />
+      <AppHeader />
+
+      <View style={styles.segmentWrapper}>
+        <SegmentedControl segments={SEGMENTS} selectedIndex={selectedSegment} onSelect={setSelectedSegment} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 100,
-          flexGrow: 1,
-        }}
-        scrollIndicatorInsets={{ bottom: insets.bottom + 80 }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {isScheduleView ? renderScheduleContent() : renderMyScheduleContent()}
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+        {isScheduleView ? (
+          <>
+            <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
+            {showNowIndicator ? <NowIndicator /> : null}
+            {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
+              <View key={slot.time}>
+                {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} />
+              </View>
+            )) : (
+              <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
+            )}
+          </>
+        ) : (
+          <>
+            {!isScheduleView && hasEventsToday ? <NowIndicator /> : null}
+            {myScheduleSections.length > 0 ? myScheduleSections.map((section, si) => (
+              <View key={section.dateLabel}>
+                <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
+                  <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
+                </View>
+                {section.slots.map((slot, slotI) => (
+                  <View key={slot.time}>
+                    {slotI > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                    <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} showSwipeActions={false} />
+                  </View>
+                ))}
+                {si < myScheduleSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
+              </View>
+            )) : (
+              <EmptyState title="Нет запланированных событий" message="Нажмите + на карточке события, чтобы добавить его сюда." />
+            )}
+          </>
+        )}
       </ScrollView>
 
       {isScheduleView ? (
-        <View
-          style={[
-            styles.bottomSelector,
-            {
-              bottom:
-                insets.bottom +
-                Spacing.sm +
-                (isSearching ? Math.max(0, keyboardHeight - insets.bottom) : 0),
-            },
-          ]}
-        >
+        <View style={styles.bottomSelector}>
           {isSearching ? (
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onClose={handleSearchClose}
-            />
+            <SearchBar value={searchQuery} onChangeText={setSearchQuery} onClose={() => { setIsSearching(false); setSearchQuery(""); }} />
           ) : (
-            <DateSelector
-              dates={eventDays}
-              selectedDate={selectedDate}
-              onSelect={setSelectedDate}
-              onSearchPress={handleSearchPress}
-              isSearchActive={isSearching}
-            />
+            <DateSelector dates={eventDays} selectedDate={currentDate} onSelect={setSelectedDate} onSearchPress={() => setIsSearching(true)} isSearchActive={isSearching} />
           )}
         </View>
       ) : null}
@@ -416,42 +157,21 @@ export default function MainScheduleScreen() {
         visible={conflictModalVisible}
         newEvent={pendingEvent}
         conflictingEvent={conflictingEvent}
-        onReplace={handleReplace}
-        onKeepBoth={handleKeepBoth}
-        onCancel={handleCancelConflict}
+        onReplace={() => { if (pendingEvent && conflictingEvent) { togglePlanned(conflictingEvent.id); togglePlanned(pendingEvent.id); } setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
+        onKeepBoth={() => { if (pendingEvent) togglePlanned(pendingEvent.id); setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
+        onCancel={() => { setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  slotDivider: {
-    height: 1,
-    marginLeft: 72 + Spacing.lg,
-    marginRight: Spacing.lg,
-  },
-  dateHeader: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  dateLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  sectionDivider: {
-    height: 8,
-    marginVertical: Spacing.md,
-  },
-  bottomSelector: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
+  container: { flex: 1, position: "relative" },
+  segmentWrapper: { paddingTop: 8 },
+  scrollView: { flex: 1 },
+  slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
+  dateHeader: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },
+  dateLabel: { fontSize: 16, fontWeight: "600" },
+  sectionDivider: { height: 8, marginVertical: Spacing.md },
+  bottomSelector: { position: "absolute", left: 0, right: 0, bottom: 0, paddingBottom: Spacing.sm, zIndex: 10 },
 });

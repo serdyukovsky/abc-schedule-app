@@ -1,92 +1,29 @@
-import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  WithSpringConfig,
-} from "react-native-reanimated";
-
-import { ThemedText } from "@/components/ThemedText";
+import React from "react";
+import { View, Text, Pressable, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface ButtonProps {
-  onPress?: () => void;
-  children: ReactNode;
-  style?: StyleProp<ViewStyle>;
+  title: string;
+  onPress: () => void;
+  variant?: "primary" | "secondary";
   disabled?: boolean;
 }
 
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-  energyThreshold: 0.001,
-};
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-export function Button({
-  onPress,
-  children,
-  style,
-  disabled = false,
-}: ButtonProps) {
+export function Button({ title, onPress, variant = "primary", disabled }: ButtonProps) {
   const { theme } = useTheme();
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    if (!disabled) {
-      scale.value = withSpring(0.98, springConfig);
-    }
-  };
-
-  const handlePressOut = () => {
-    if (!disabled) {
-      scale.value = withSpring(1, springConfig);
-    }
-  };
-
   return (
-    <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+    <Pressable
+      onPress={onPress}
       disabled={disabled}
-      style={[
-        styles.button,
-        {
-          backgroundColor: theme.link,
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-        animatedStyle,
-      ]}
+      style={[styles.button, variant === "primary" ? { backgroundColor: theme.link } : { backgroundColor: theme.backgroundSecondary, borderWidth: 1, borderColor: theme.separator }]}
     >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
-      >
-        {children}
-      </ThemedText>
-    </AnimatedPressable>
+      <Text style={[styles.text, { color: variant === "primary" ? theme.buttonText : theme.text }]}>{title}</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    fontWeight: "600",
-  },
+  button: { height: Spacing.buttonHeight, borderRadius: BorderRadius.full, alignItems: "center", justifyContent: "center", paddingHorizontal: Spacing.xl },
+  text: { fontSize: 16, fontWeight: "600" },
 });

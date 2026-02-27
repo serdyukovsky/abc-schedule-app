@@ -1,54 +1,29 @@
-import React, { Component, ComponentType, PropsWithChildren } from "react";
-import { ErrorFallback, ErrorFallbackProps } from "@/components/ErrorFallback";
+import React, { Component, ErrorInfo, ReactNode } from "react";
 
-export type ErrorBoundaryProps = PropsWithChildren<{
-  FallbackComponent?: ComponentType<ErrorFallbackProps>;
-  onError?: (error: Error, stackTrace: string) => void;
-}>;
+interface Props { children: ReactNode }
+interface State { hasError: boolean; error?: Error }
 
-type ErrorBoundaryState = { error: Error | null };
+export class ErrorBoundary extends Component<Props, State> {
+  state: State = { hasError: false };
 
-/**
- * This is a special case for for using the class components. Error boundaries must be class components because React only provides error boundary functionality through lifecycle methods (componentDidCatch and getDerivedStateFromError) which are not available in functional components.
- * https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
- */
-
-export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
-  state: ErrorBoundaryState = { error: null };
-
-  static defaultProps: {
-    FallbackComponent: ComponentType<ErrorFallbackProps>;
-  } = {
-    FallbackComponent: ErrorFallback,
-  };
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { error };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, info: { componentStack: string }): void {
-    if (typeof this.props.onError === "function") {
-      this.props.onError(error, info.componentStack);
-    }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("ErrorBoundary caught:", error, info);
   }
-
-  resetError = (): void => {
-    this.setState({ error: null });
-  };
 
   render() {
-    const { FallbackComponent } = this.props;
-
-    return this.state.error && FallbackComponent ? (
-      <FallbackComponent
-        error={this.state.error}
-        resetError={this.resetError}
-      />
-    ) : (
-      this.props.children
-    );
+    if (this.state.hasError) {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 24 }}>
+          <h2 style={{ margin: 0, marginBottom: 8 }}>Что-то пошло не так</h2>
+          <p style={{ color: "#666", textAlign: "center" }}>{this.state.error?.message}</p>
+          <button style={{ marginTop: 16, padding: "8px 16px", cursor: "pointer" }} onClick={() => this.setState({ hasError: false })}>Попробовать снова</button>
+        </div>
+      );
+    }
+    return this.props.children;
   }
 }
