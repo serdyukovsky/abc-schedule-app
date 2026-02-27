@@ -69,7 +69,7 @@ export function AppMenu({ visible, onClose }: AppMenuProps) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", alignItems: "center", paddingBottom: 80 },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", alignItems: "flex-end", paddingBottom: 80, paddingRight: Spacing.lg },
   menu: { width: 260, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.18)" },
   userSection: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.lg, flexDirection: "row", alignItems: "center", gap: Spacing.md, borderBottomWidth: 1 },
   userAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
