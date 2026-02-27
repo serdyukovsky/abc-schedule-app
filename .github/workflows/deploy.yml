@@ -35,3 +35,9 @@ jobs:
 
           # Pull latest code on server (for future seed scripts, etc.)
           ssh -i ~/.ssh/deploy_key root@$SERVER "cd /opt/abc-schedule/app && git pull origin main"
+
+          # Sync PocketBase hooks and restart
+          ssh -i ~/.ssh/deploy_key root@$SERVER "
+            cp -r /opt/abc-schedule/app/pocketbase/pb_hooks/ /opt/abc-schedule/pocketbase/pb_hooks/
+            systemctl restart pocketbase 2>/dev/null || true
+          "
