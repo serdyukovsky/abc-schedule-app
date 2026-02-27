@@ -34,7 +34,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
               <Pressable
                 key={i}
                 onPress={() => onSelect(opt.date)}
-                style={[styles.dateButton, isSelected && { backgroundColor: theme.link }]}
+                style={[styles.dateButton, isSelected && { backgroundColor: isDark ? "rgba(210,7,41,0.18)" : "rgba(210,7,41,0.85)" }]}
                 testID={`date-selector-${i}`}
               >
                 <Text style={[styles.dayNumber, { color: isSelected ? "#FFFFFF" : iconColor }]}>
