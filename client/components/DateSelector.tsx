@@ -34,13 +34,13 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
               <Pressable
                 key={i}
                 onPress={() => onSelect(opt.date)}
-                style={[styles.dateButton, isSelected && { backgroundColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.85)" }]}
+                style={[styles.dateButton, isSelected && { backgroundColor: theme.link }]}
                 testID={`date-selector-${i}`}
               >
-                <Text style={[styles.dayNumber, { color: isSelected ? theme.text : iconColor }]}>
+                <Text style={[styles.dayNumber, { color: isSelected ? "#FFFFFF" : iconColor }]}>
                   {opt.date.getDate()}
                 </Text>
-                <Text style={[styles.dayLabel, { color: isSelected ? theme.textSecondary : isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }]}>
+                <Text style={[styles.dayLabel, { color: isSelected ? "rgba(255,255,255,0.8)" : isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)" }]}>
                   {formatMonth(opt.date)}
                 </Text>
               </Pressable>

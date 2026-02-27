@@ -1,5 +1,6 @@
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
+const accentLight = "#d20729";
+const accentDark = "#e5243e";
+const secondaryAccent = "#2596be";
 
 export const Colors = {
   light: {
@@ -8,16 +9,17 @@ export const Colors = {
     textMuted: "rgba(0, 0, 0, 0.4)",
     buttonText: "#FFFFFF",
     tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
-    link: "#007AFF",
+    tabIconSelected: accentLight,
+    link: accentLight,
+    accent: secondaryAccent,
     backgroundRoot: "#FFFFFF",
     backgroundDefault: "#FAFAFA",
     backgroundSecondary: "#F2F2F2",
     backgroundTertiary: "#E5E5E5",
     separator: "#E5E5E5",
-    conflict: "#FF3B30",
-    nowIndicator: "#34C759",
-    currentHighlight: "rgba(0, 122, 255, 0.1)",
+    conflict: "#d20729",
+    nowIndicator: "#2596be",
+    currentHighlight: "rgba(210, 7, 41, 0.08)",
     trackBadge: "#F0F0F0",
   },
   dark: {
@@ -26,16 +28,17 @@ export const Colors = {
     textMuted: "rgba(255, 255, 255, 0.4)",
     buttonText: "#FFFFFF",
     tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
-    link: "#0A84FF",
+    tabIconSelected: accentDark,
+    link: accentDark,
+    accent: "#3aadd4",
     backgroundRoot: "#000000",
     backgroundDefault: "#1C1C1E",
     backgroundSecondary: "#2C2C2E",
     backgroundTertiary: "#38383A",
     separator: "#38383A",
-    conflict: "#FF453A",
-    nowIndicator: "#30D158",
-    currentHighlight: "rgba(10, 132, 255, 0.15)",
+    conflict: "#e5243e",
+    nowIndicator: "#3aadd4",
+    currentHighlight: "rgba(229, 36, 62, 0.12)",
     trackBadge: "#2C2C2E",
   },
 };

@@ -407,7 +407,7 @@ interface ActivityIndicatorProps {
   style?: RNStyleProp;
 }
 
-export function ActivityIndicator({ size = "small", color = "#007AFF", style }: ActivityIndicatorProps) {
+export function ActivityIndicator({ size = "small", color = "#d20729", style }: ActivityIndicatorProps) {
   const px = size === "large" ? 36 : size === "small" ? 20 : size;
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", ...mergeStyles(style) }}>
