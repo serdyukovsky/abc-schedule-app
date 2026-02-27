@@ -1,6 +1,9 @@
 import PocketBase from "pocketbase";
 
-const PB_URL = (typeof window !== "undefined" && (window as any).__PB_URL__) || "http://127.0.0.1:8090";
+const PB_URL =
+  typeof window !== "undefined" && window.location.hostname !== "localhost"
+    ? window.location.origin
+    : "http://127.0.0.1:8090";
 export const pb = new PocketBase(PB_URL);
 
 export function getFileUrl(
