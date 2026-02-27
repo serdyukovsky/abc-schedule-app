@@ -6,7 +6,9 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { EventProvider } from "@/context/EventContext";
 import { ActivityIndicator, View } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
+import { isTelegramWebApp } from "@/hooks/useTelegram";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Text, Pressable } from "@/components/primitives";
 
 // Screens
 import LoginScreen from "@/screens/LoginScreen";
@@ -24,12 +26,35 @@ function LoadingScreen() {
   );
 }
 
+function TelegramAuthError() {
+  const { theme } = useTheme();
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.backgroundRoot, padding: 24 }}>
+      <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text, marginBottom: 8, textAlign: "center" }}>
+        Не удалось войти
+      </Text>
+      <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginBottom: 20 }}>
+        Ошибка авторизации через Telegram. Попробуйте перезапустить приложение.
+      </Text>
+      <Pressable
+        onPress={() => window.location.reload()}
+        style={{ backgroundColor: theme.link, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+      >
+        <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "600" }}>Повторить</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function AppRoutes() {
   const { isLoggedIn, isLoading } = useAuth();
 
   if (isLoading) return <LoadingScreen />;
 
   if (!isLoggedIn) {
+    if (isTelegramWebApp()) {
+      return <TelegramAuthError />;
+    }
     return (
       <Routes>
         <Route path="/login" element={<LoginScreen />} />

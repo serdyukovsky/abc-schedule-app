@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { pb } from "@/lib/pb";
+import { isTelegramWebApp } from "@/hooks/useTelegram";
 import type { RecordModel } from "pocketbase";
 
 export interface UserProfile {
@@ -14,6 +15,7 @@ export interface UserProfile {
 interface AuthContextType {
   isLoggedIn: boolean;
   isLoading: boolean;
+  isTelegramUser: boolean;
   profile: UserProfile | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (profile: UserProfile, password: string) => Promise<boolean>;
@@ -32,31 +34,60 @@ function recordToProfile(record: RecordModel): UserProfile {
     company: record.company || "",
     title: record.title || "",
     phone: record.phone || "",
-    login: record.email || "",
+    login: record.email?.includes("@telegram.local") ? "" : (record.email || ""),
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTelegramUser, setIsTelegramUser] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  const loginWithTelegram = async (): Promise<boolean> => {
+    try {
+      const initData = window.Telegram?.WebApp?.initData;
+      if (!initData) return false;
+
+      const response = await pb.send("/api/telegram-auth", {
+        method: "POST",
+        body: { initData },
+      });
+
+      pb.authStore.save(response.token, response.record);
+      setProfile(recordToProfile(response.record));
+      setIsLoggedIn(true);
+      setIsTelegramUser(true);
+      return true;
+    } catch (error) {
+      console.error("Telegram auth error:", error);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    // Check if there's a valid auth token stored
     if (pb.authStore.isValid && pb.authStore.record) {
       setProfile(recordToProfile(pb.authStore.record));
       setIsLoggedIn(true);
+      setIsTelegramUser(Boolean(pb.authStore.record.telegramId));
+      setIsLoading(false);
+    } else if (isTelegramWebApp()) {
+      // Auto-login via Telegram
+      loginWithTelegram().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
-    setIsLoading(false);
 
     // Listen for auth store changes
     const unsub = pb.authStore.onChange((_token, record) => {
       if (record) {
         setProfile(recordToProfile(record));
         setIsLoggedIn(true);
+        setIsTelegramUser(Boolean(record.telegramId));
       } else {
         setProfile(null);
         setIsLoggedIn(false);
+        setIsTelegramUser(false);
       }
     });
 
@@ -140,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     pb.authStore.clear();
     setIsLoggedIn(false);
     setProfile(null);
+    setIsTelegramUser(false);
   };
 
   const getFullName = (): string => {
@@ -149,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, isLoading, profile, login, register, updateProfile, changePassword, logout, getFullName }}
+      value={{ isLoggedIn, isLoading, isTelegramUser, profile, login, register, updateProfile, changePassword, logout, getFullName }}
     >
       {children}
     </AuthContext.Provider>

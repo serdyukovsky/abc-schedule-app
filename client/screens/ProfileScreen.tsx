@@ -8,7 +8,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
-  const { profile, getFullName, logout, updateProfile, changePassword } = useAuth();
+  const { profile, getFullName, logout, updateProfile, changePassword, isTelegramUser } = useAuth();
   const navigate = useNavigate();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -65,7 +65,10 @@ export default function ProfileScreen() {
 
         {/* Read-only info */}
         <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-          {[{ label: "Электронная почта", value: profile?.login ?? "—" }, { label: "Телефон", value: profile?.phone ?? "—" }].map((item, i, arr) => (
+          {[
+            ...(isTelegramUser ? [] : [{ label: "Электронная почта", value: profile?.login ?? "—" }]),
+            { label: "Телефон", value: profile?.phone ?? "—" },
+          ].map((item, i, arr) => (
             <View key={item.label}>
               <View style={styles.row}>
                 <Text style={[styles.label, { color: theme.textSecondary }]}>{item.label}</Text>
@@ -110,25 +113,27 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
-        {/* Change password */}
-        <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }, { marginBottom: Spacing.md }]}>Смена пароля</Text>
-          {passwordError ? <Text style={[styles.errorText, { color: theme.conflict }]}>{passwordError}</Text> : null}
-          {passwordSuccess ? <Text style={[styles.errorText, { color: theme.nowIndicator }]}>Пароль обновлён</Text> : null}
-          {[
-            { label: "Старый пароль", value: currentPassword, setter: setCurrentPassword, placeholder: "Введите старый пароль" },
-            { label: "Новый пароль", value: newPassword, setter: setNewPassword, placeholder: "Придумайте пароль" },
-            { label: "Повторите пароль", value: confirmPassword, setter: setConfirmPassword, placeholder: "Повторите пароль" },
-          ].map(({ label, value, setter, placeholder }) => (
-            <View key={label} style={styles.field}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
-              <TextInput style={inputStyle} value={value} onChangeText={setter} secureTextEntry placeholder={placeholder} />
-            </View>
-          ))}
-          <Pressable onPress={handleSavePassword} style={[styles.primaryButton, { backgroundColor: theme.link }]} testID="password-save">
-            <Text style={[styles.primaryButtonText, { color: theme.buttonText }]}>Сохранить</Text>
-          </Pressable>
-        </View>
+        {/* Change password (hidden for Telegram users) */}
+        {!isTelegramUser ? (
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }, { marginBottom: Spacing.md }]}>Смена пароля</Text>
+            {passwordError ? <Text style={[styles.errorText, { color: theme.conflict }]}>{passwordError}</Text> : null}
+            {passwordSuccess ? <Text style={[styles.errorText, { color: theme.nowIndicator }]}>Пароль обновлён</Text> : null}
+            {[
+              { label: "Старый пароль", value: currentPassword, setter: setCurrentPassword, placeholder: "Введите старый пароль" },
+              { label: "Новый пароль", value: newPassword, setter: setNewPassword, placeholder: "Придумайте пароль" },
+              { label: "Повторите пароль", value: confirmPassword, setter: setConfirmPassword, placeholder: "Повторите пароль" },
+            ].map(({ label, value, setter, placeholder }) => (
+              <View key={label} style={styles.field}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>{label}</Text>
+                <TextInput style={inputStyle} value={value} onChangeText={setter} secureTextEntry placeholder={placeholder} />
+              </View>
+            ))}
+            <Pressable onPress={handleSavePassword} style={[styles.primaryButton, { backgroundColor: theme.link }]} testID="password-save">
+              <Text style={[styles.primaryButtonText, { color: theme.buttonText }]}>Сохранить</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <Pressable onPress={logout} style={[styles.logoutButton, { backgroundColor: theme.backgroundSecondary }]} testID="profile-logout">
           <Feather name="log-out" size={18} color={theme.conflict} />

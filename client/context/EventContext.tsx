@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { pb } from "@/lib/pb";
 import { Event, EventRecord, TrackRecord, UserScheduleRecord, toEvent } from "@/lib/pb-types";
+import { useTelegram } from "@/hooks/useTelegram";
 
 interface EventContextType {
   events: Event[];
@@ -20,6 +21,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const [plannedIds, setPlannedIds] = useState<Set<string>>(new Set());
   const [scheduleRecords, setScheduleRecords] = useState<Map<string, string>>(new Map()); // eventId → scheduleRecordId
   const [isLoading, setIsLoading] = useState(true);
+  const { hapticImpact, hapticNotification } = useTelegram();
 
   // Load events and tracks (public, no auth needed)
   useEffect(() => {
@@ -80,6 +82,13 @@ export function EventProvider({ children }: { children: ReactNode }) {
       if (!pb.authStore.isValid || !pb.authStore.record) return;
       const userId = pb.authStore.record.id;
       const isCurrentlyPlanned = plannedIds.has(eventId);
+
+      // Haptic feedback (immediate, before API call)
+      if (isCurrentlyPlanned) {
+        hapticNotification("warning");
+      } else {
+        hapticImpact("medium");
+      }
 
       // Optimistic update
       setPlannedIds((prev) => {
