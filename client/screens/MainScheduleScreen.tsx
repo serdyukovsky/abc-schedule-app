@@ -4,7 +4,6 @@ import { View, Text, ScrollView, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
 import { Spacing } from "@/constants/theme";
-import { SegmentedControl } from "@/components/SegmentedControl";
 import { FilterChips } from "@/components/FilterChips";
 import { DateSelector } from "@/components/DateSelector";
 import { SearchBar } from "@/components/SearchBar";
@@ -13,12 +12,11 @@ import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
 import { ConflictModal } from "@/components/ConflictModal";
 import { AppHeader } from "@/components/AppHeader";
+import { AppMenu } from "@/components/AppMenu";
 import { Event } from "@/lib/pb-types";
 
 interface TimeSlot { time: string; endTime?: string; events: Event[] }
 interface DaySection { date: Date; dateLabel: string; slots: TimeSlot[] }
-
-const SEGMENTS = ["Расписание", "Моё расписание"];
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "long", month: "short", day: "numeric" });
@@ -43,6 +41,7 @@ export default function MainScheduleScreen() {
   const [conflictingEvent, setConflictingEvent] = useState<Event | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
@@ -100,11 +99,7 @@ export default function MainScheduleScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <AppHeader />
-
-      <View style={styles.segmentWrapper}>
-        <SegmentedControl segments={SEGMENTS} selectedIndex={selectedSegment} onSelect={setSelectedSegment} />
-      </View>
+      <AppHeader selectedSegment={selectedSegment} onSelectSegment={setSelectedSegment} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
         {isScheduleView ? (
@@ -143,15 +138,22 @@ export default function MainScheduleScreen() {
         )}
       </ScrollView>
 
-      {isScheduleView ? (
-        <View style={styles.bottomSelector}>
-          {isSearching ? (
-            <SearchBar value={searchQuery} onChangeText={setSearchQuery} onClose={() => { setIsSearching(false); setSearchQuery(""); }} />
-          ) : (
-            <DateSelector dates={eventDays} selectedDate={currentDate} onSelect={setSelectedDate} onSearchPress={() => setIsSearching(true)} isSearchActive={isSearching} />
-          )}
-        </View>
-      ) : null}
+      <View style={styles.bottomSelector}>
+        {isSearching ? (
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} onClose={() => { setIsSearching(false); setSearchQuery(""); }} />
+        ) : (
+          <DateSelector
+            dates={eventDays}
+            selectedDate={currentDate}
+            onSelect={(d) => { setSelectedDate(d); if (!isScheduleView) setSelectedSegment(0); }}
+            onSearchPress={() => { if (!isScheduleView) setSelectedSegment(0); setIsSearching(true); }}
+            isSearchActive={isSearching}
+            onMenuPress={() => setMenuVisible(true)}
+          />
+        )}
+      </View>
+
+      <AppMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       <ConflictModal
         visible={conflictModalVisible}
@@ -167,7 +169,6 @@ export default function MainScheduleScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, position: "relative" },
-  segmentWrapper: { paddingTop: 8 },
   scrollView: { flex: 1 },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
   dateHeader: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },

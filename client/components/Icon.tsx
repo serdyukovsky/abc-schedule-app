@@ -3,7 +3,7 @@ import {
   User, Eye, EyeOff, CheckCircle, PlusCircle, Search, X,
   Check, Plus, AlertCircle, Calendar, Clock, MapPin,
   ChevronLeft, ChevronRight, Edit2, LogOut,
-  Menu, Globe, Info, ExternalLink,
+  Menu, Globe, Info, ExternalLink, Sun, Moon, Ellipsis,
   type LucideProps,
 } from "lucide-react";
 
@@ -29,6 +29,9 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   globe: Globe,
   info: Info,
   "external-link": ExternalLink,
+  sun: Sun,
+  moon: Moon,
+  "more-horizontal": Ellipsis,
 };
 
 interface FeatherProps {

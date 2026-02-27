@@ -34,7 +34,7 @@ export function SegmentedControl({ segments, selectedIndex, onSelect }: Segmente
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: "row", borderRadius: 8, padding: 2, marginHorizontal: Spacing.lg, marginVertical: 4 },
+  container: { flexDirection: "row", borderRadius: 8, padding: 2 },
   segment: { flex: 1, paddingVertical: 5, alignItems: "center", justifyContent: "center", borderRadius: 6 },
   selectedSegment: { borderRadius: 6 },
   segmentText: { fontSize: 12 },
