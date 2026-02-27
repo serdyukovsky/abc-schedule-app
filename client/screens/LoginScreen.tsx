@@ -8,6 +8,7 @@ import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { LogoABC } from "@/components/LogoABC";
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -39,8 +40,7 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={[styles.logo, { color: theme.text }]}>ABC</Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>Altai Business Camp</Text>
+          <LogoABC height={56} color={theme.text} />
         </View>
 
         <View style={styles.form}>
