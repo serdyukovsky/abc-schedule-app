@@ -2,9 +2,9 @@
 # Setup PocketBase collections for ABC Schedule App
 set -e
 
-PB_URL="http://127.0.0.1:8090"
-ADMIN_EMAIL="admin@REDACTED.local"
-ADMIN_PASSWORD="REDACTED"
+PB_URL="${PB_URL:-http://127.0.0.1:8090}"
+ADMIN_EMAIL="${PB_ADMIN_EMAIL:?Set PB_ADMIN_EMAIL env variable}"
+ADMIN_PASSWORD="${PB_ADMIN_PASSWORD:?Set PB_ADMIN_PASSWORD env variable}"
 
 # Get admin token
 TOKEN=$(curl -s "$PB_URL/api/collections/_superusers/auth-with-password" -X POST \
