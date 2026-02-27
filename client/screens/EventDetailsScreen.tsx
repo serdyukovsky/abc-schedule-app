@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { View, Text, Pressable, ScrollView, StyleSheet } from "@/components/primitives";
+import { View, Text, Pressable, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
@@ -10,6 +10,7 @@ export default function EventDetailsScreen() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { events, togglePlanned, hasConflict } = useEvents();
 
   const event = events.find((e) => e.id === eventId);
@@ -40,7 +41,7 @@ export default function EventDetailsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       {/* Header */}
-      <View style={[styles.topBar, { backgroundColor: theme.backgroundRoot, borderBottomColor: theme.separator }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.backgroundRoot, borderBottomColor: theme.separator, paddingTop: 16 + insets.top }]}>
         <Pressable onPress={() => navigate(-1 as any)} style={styles.backButton}>
           <Feather name="chevron-left" size={24} color={theme.text} />
         </Pressable>
@@ -50,7 +51,7 @@ export default function EventDetailsScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
           <Text style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</Text>
         </View>
@@ -132,7 +133,7 @@ export default function EventDetailsScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={[styles.bottomBar, { backgroundColor: theme.backgroundRoot, borderTopColor: theme.separator }]}>
+      <View style={[styles.bottomBar, { backgroundColor: theme.backgroundRoot, borderTopColor: theme.separator, paddingBottom: Spacing.lg + insets.bottom }]}>
         <Pressable
           onPress={() => togglePlanned(event.id)}
           style={[styles.primaryButton, { backgroundColor: event.isPlanned ? theme.backgroundSecondary : theme.link }]}
@@ -150,7 +151,7 @@ export default function EventDetailsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, paddingTop: 16 },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1 },
   backButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 15, fontWeight: "600" },
   scrollView: { flex: 1 },
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   topicRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: Spacing.sm },
   bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 7, marginRight: Spacing.md },
   topicText: { fontSize: 15, lineHeight: 22, flex: 1 },
-  bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.lg, borderTopWidth: 1 },
+  bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1 },
   primaryButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.sm, height: 52, borderRadius: BorderRadius.full },
   buttonText: { fontSize: 17, fontWeight: "600" },
 });

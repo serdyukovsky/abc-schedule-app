@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode, forwardRef, useEffect, useRef } from "react";
+import React, { CSSProperties, ReactNode, forwardRef, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 // ─── Style merging ────────────────────────────────────────────────────────────
@@ -469,5 +469,70 @@ export function Modal({ visible, children, onRequestClose }: ModalProps) {
 // ─── useSafeAreaInsets shim ───────────────────────────────────────────────────
 
 export function useSafeAreaInsets() {
-  return { top: 0, bottom: 0, left: 0, right: 0 };
+  const read = () => {
+    if (typeof window === "undefined") return { top: 0, bottom: 0, left: 0, right: 0 };
+
+    const rootStyle = window.getComputedStyle(document.documentElement);
+    const cssInset = (name: string) => {
+      const raw = rootStyle.getPropertyValue(name).trim();
+      const parsed = Number.parseFloat(raw);
+      return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+    };
+
+    const cssTop = cssInset("--safe-area-top");
+    const cssRight = cssInset("--safe-area-right");
+    const cssBottom = cssInset("--safe-area-bottom");
+    const cssLeft = cssInset("--safe-area-left");
+
+    const webApp: any = (window as any).Telegram?.WebApp;
+    const contentSafe = webApp?.contentSafeAreaInset || {};
+    const safe = webApp?.safeAreaInset || {};
+
+    const toNum = (v: any) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    };
+
+    const tgTop = toNum(contentSafe.top ?? safe.top);
+    const tgRight = toNum(contentSafe.right ?? safe.right);
+    const tgBottom = toNum(contentSafe.bottom ?? safe.bottom);
+    const tgLeft = toNum(contentSafe.left ?? safe.left);
+
+    return {
+      top: Math.max(cssTop, tgTop),
+      right: Math.max(cssRight, tgRight),
+      bottom: Math.max(cssBottom, tgBottom),
+      left: Math.max(cssLeft, tgLeft),
+    };
+  };
+
+  const [insets, setInsets] = useState(read);
+
+  useEffect(() => {
+    const updateInsets = () => setInsets(read());
+    updateInsets();
+
+    window.addEventListener("resize", updateInsets);
+    window.addEventListener("orientationchange", updateInsets);
+
+    const webApp: any = (window as any).Telegram?.WebApp;
+    if (webApp?.onEvent) {
+      webApp.onEvent("viewportChanged", updateInsets);
+      webApp.onEvent("safeAreaChanged", updateInsets);
+      webApp.onEvent("contentSafeAreaChanged", updateInsets);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateInsets);
+      window.removeEventListener("orientationchange", updateInsets);
+
+      if (webApp?.offEvent) {
+        webApp.offEvent("viewportChanged", updateInsets);
+        webApp.offEvent("safeAreaChanged", updateInsets);
+        webApp.offEvent("contentSafeAreaChanged", updateInsets);
+      }
+    };
+  }, []);
+
+  return insets;
 }

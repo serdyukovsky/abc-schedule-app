@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { View, Text, Pressable, ScrollView, TextInput, StyleSheet } from "@/components/primitives";
+import { View, Text, Pressable, ScrollView, TextInput, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -8,6 +8,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { profile, getFullName, logout, updateProfile, changePassword, isTelegramUser } = useAuth();
   const navigate = useNavigate();
 
@@ -47,7 +48,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <View style={[styles.topBar, { borderBottomColor: theme.separator }]}>
+      <View style={[styles.topBar, { borderBottomColor: theme.separator, paddingTop: 16 + insets.top }]}>
         <Pressable onPress={() => navigate(-1 as any)} style={styles.backButton} testID="profile-back">
           <Feather name="chevron-left" size={22} color={theme.text} />
         </Pressable>
@@ -55,7 +56,7 @@ export default function ProfileScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.content, { paddingBottom: Spacing["3xl"] + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
             <Text style={[styles.name, { color: theme.text }]}>{fullName || "Профиль"}</Text>
@@ -146,10 +147,10 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1, paddingTop: 16 },
+  topBar: { flexDirection: "row", alignItems: "center", paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderBottomWidth: 1 },
   backButton: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   topBarTitle: { flex: 1, textAlign: "center", fontSize: 17, fontWeight: "600" },
-  content: { paddingTop: Spacing.xl, gap: Spacing.lg, paddingHorizontal: Spacing.lg, paddingBottom: Spacing["3xl"] },
+  content: { paddingTop: Spacing.xl, gap: Spacing.lg, paddingHorizontal: Spacing.lg },
   header: { flexDirection: "row", alignItems: "center", marginBottom: Spacing.md },
   name: { fontSize: 22, fontWeight: "600" },
   subtitle: { fontSize: 14, marginTop: 4 },

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { View, Text, ScrollView, StyleSheet } from "@/components/primitives";
+import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
 import { Spacing } from "@/constants/theme";
@@ -25,6 +25,7 @@ const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate(
 
 export default function MainScheduleScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const navigate = useNavigate();
   const { events, tracks: trackRecords, togglePlanned, hasConflict, getPlannedEvents, eventDays } = useEvents();
 
@@ -99,9 +100,9 @@ export default function MainScheduleScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
-      <AppHeader selectedSegment={selectedSegment} onSelectSegment={setSelectedSegment} />
+      <AppHeader selectedSegment={selectedSegment} onSelectSegment={setSelectedSegment} topInset={insets.top} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: 52, paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: 52 + insets.top, paddingBottom: 90 + insets.bottom }} showsVerticalScrollIndicator={false}>
         {isScheduleView ? (
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
@@ -138,7 +139,7 @@ export default function MainScheduleScreen() {
         )}
       </ScrollView>
 
-      <View style={styles.bottomSelector}>
+      <View style={[styles.bottomSelector, { paddingBottom: Spacing.sm + insets.bottom }]}>
         {isSearching ? (
           <SearchBar value={searchQuery} onChangeText={setSearchQuery} onClose={() => { setIsSearching(false); setSearchQuery(""); }} />
         ) : (

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { View, Text, Pressable, Modal, StyleSheet } from "@/components/primitives";
+import { View, Text, Pressable, Modal, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -14,13 +14,14 @@ interface AppMenuProps {
 
 export function AppMenu({ visible, onClose }: AppMenuProps) {
   const { theme, isDark, toggleTheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { getFullName, logout } = useAuth();
   const navigate = useNavigate();
   const fullName = getFullName();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
+      <Pressable style={[styles.overlay, { paddingBottom: 80 + insets.bottom }]} onPress={onClose}>
         <View style={[styles.menu, { backgroundColor: theme.backgroundDefault }]}>
           {/* User info */}
           <View style={[styles.userSection, { borderBottomColor: theme.separator }]}>
@@ -69,7 +70,7 @@ export function AppMenu({ visible, onClose }: AppMenuProps) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", alignItems: "flex-end", paddingBottom: 80, paddingRight: Spacing.lg },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end", alignItems: "flex-end", paddingRight: Spacing.lg },
   menu: { width: 260, borderRadius: 14, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.18)" },
   userSection: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.lg, flexDirection: "row", alignItems: "center", gap: Spacing.md, borderBottomWidth: 1 },
   userAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
