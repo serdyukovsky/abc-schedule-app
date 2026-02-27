@@ -501,8 +501,8 @@ export function useSafeAreaInsets() {
 
     // Telegram in-app webview may report too small/zero insets on some clients.
     // Keep conservative minimums to avoid overlaps with native chrome.
-    const minTgTop = isTelegramWebApp ? 52 : 0;
-    const minTgBottom = isTelegramWebApp ? 20 : 0;
+    const minTgTop = isTelegramWebApp ? 86 : 0;
+    const minTgBottom = isTelegramWebApp ? 34 : 0;
 
     return {
       top: Math.max(cssTop, tgTop, minTgTop),
