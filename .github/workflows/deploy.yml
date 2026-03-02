@@ -39,9 +39,6 @@ jobs:
           rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
             dist/ deploy@$SERVER:/opt/abc-schedule/pocketbase/pb_public/
 
-          # Pull latest code on server
-          ssh -i ~/.ssh/deploy_key deploy@$SERVER "cd /opt/abc-schedule/app && git pull origin main"
-
           # Sync PocketBase hooks and restart
           rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
             pocketbase/pb_hooks/ deploy@$SERVER:/opt/abc-schedule/pocketbase/pb_hooks/
