@@ -19,37 +19,33 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
   }
 
   if (!hash) return e.json(400, { error: "hash not found in initData" });
-  console.log("[tg-auth] keys=", Object.keys(params).join(","), " hash=", hash);
 
   const dataCheckString = Object.keys(params).sort().map((k) => `${k}=${params[k]}`).join("\n");
-  console.log("[tg-auth] dcs=", dataCheckString);
 
   const botToken = $os.getenv("TELEGRAM_BOT_TOKEN");
   if (!botToken) return e.json(500, { error: "TELEGRAM_BOT_TOKEN not configured" });
 
+  // PocketBase's $security.hs256 uses string keys (UTF-8 bytes), but Telegram's verification
+  // requires a binary intermediate key (raw HMAC bytes). Python is the only reliable option here.
   let computedHash = "";
   try {
-    const py = [
-      "import sys,hmac,hashlib",
-      "dcs=sys.argv[1].encode()",
-      "bot=sys.argv[2].encode()",
-      "secret=hmac.new(b'WebAppData', bot, hashlib.sha256).digest()",
-      "print(hmac.new(secret, dcs, hashlib.sha256).hexdigest())"
-    ].join("\n");
-
-    const out = $os.cmd("python3", "-c", py, dataCheckString, botToken).output();
+    const out = $os.cmd(
+      "python3", "-c",
+      "import sys,hmac,hashlib; s=hmac.new(b'WebAppData',sys.argv[1].encode(),hashlib.sha256).digest(); print(hmac.new(s,sys.argv[2].encode(),hashlib.sha256).hexdigest())",
+      botToken,
+      dataCheckString
+    ).output();
     computedHash = toString(out).trim().toLowerCase();
   } catch (err) {
-    console.log("[tg-auth] verify exception:", String(err));
     return e.json(500, { error: "Telegram signature verification failed" });
   }
 
-  console.log("[tg-auth] computed=", computedHash);
   if (!computedHash || !$security.equal(computedHash, hash)) return e.json(401, { error: "Invalid initData signature" });
 
+  // 10-minute window (Telegram recommends keeping it short)
   const authDate = parseInt(params["auth_date"] || "0", 10);
   const now = Math.floor(Date.now() / 1000);
-  if (!authDate || now - authDate > 86400 || authDate - now > 300) return e.json(401, { error: "initData expired" });
+  if (!authDate || now - authDate > 600 || authDate - now > 60) return e.json(401, { error: "initData expired" });
 
   let userData;
   try { userData = JSON.parse(params["user"] || "{}"); }

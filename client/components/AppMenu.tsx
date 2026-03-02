@@ -52,7 +52,7 @@ export function AppMenu({ visible, onClose }: AppMenuProps) {
 
           <View style={[styles.divider, { backgroundColor: theme.separator }]} />
 
-          <Pressable style={styles.menuItem} onPress={() => { onClose(); Linking.openURL("http://t.me/iamserdyuk"); }}>
+          <Pressable style={styles.menuItem} onPress={() => { onClose(); Linking.openURL("https://t.me/iamserdyuk"); }}>
             <Feather name="info" size={18} color={theme.textSecondary} />
             <Text style={[styles.menuText, { color: theme.text }]}>О приложении</Text>
           </Pressable>

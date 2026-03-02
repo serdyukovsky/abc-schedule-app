@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.7",
+    "dompurify": "^3.3.1",
     "lucide-react": "^0.468.0",
     "pocketbase": "^0.26.8",
     "react": "^19.1.0",
@@ -19,6 +20,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",

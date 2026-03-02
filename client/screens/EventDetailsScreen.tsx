@@ -1,4 +1,5 @@
 import React from "react";
+import DOMPurify from "dompurify";
 import { useParams, useNavigate } from "react-router-dom";
 import { View, Text, Pressable, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { Feather } from "@/components/Icon";
@@ -115,7 +116,7 @@ export default function EventDetailsScreen() {
             <div
               className="event-description"
               style={{ color: theme.text, fontSize: 15, lineHeight: "22px" }}
-              dangerouslySetInnerHTML={{ __html: event.description }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
             />
           </View>
         ) : null}

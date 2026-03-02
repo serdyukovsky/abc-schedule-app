@@ -44,6 +44,10 @@ export default function RegisterScreen() {
       setError("Заполните обязательные поля");
       return;
     }
+    if (password.length < 10) {
+      setError("Пароль должен содержать не менее 10 символов");
+      return;
+    }
     setIsLoading(true);
     const success = await register(
       { firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim(), company: company.trim(), title: title.trim(), login: loginId.trim() },

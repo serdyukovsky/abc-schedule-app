@@ -20,7 +20,9 @@ export function useTelegram() {
     isTelegram,
     webApp,
     initData: webApp?.initData || "",
-    user: webApp?.initDataUnsafe?.user || null,
+    // WARNING: This data is NOT cryptographically verified. Do NOT use for
+    // authorization decisions. Use pb.authStore.record instead.
+    unsafeUser: webApp?.initDataUnsafe?.user || null,
 
     hapticImpact(style: "light" | "medium" | "heavy" = "medium") {
       const app = getWebApp();
