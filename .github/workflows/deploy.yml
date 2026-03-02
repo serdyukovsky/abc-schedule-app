@@ -37,7 +37,6 @@ jobs:
           ssh -i ~/.ssh/deploy_key root@$SERVER "cd /opt/abc-schedule/app && git pull origin main"
 
           # Sync PocketBase hooks and restart
-          ssh -i ~/.ssh/deploy_key root@$SERVER "
-            cp -r /opt/abc-schedule/app/pocketbase/pb_hooks/ /opt/abc-schedule/pocketbase/pb_hooks/
-            systemctl restart pocketbase 2>/dev/null || true
-          "
+          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" \
+            pocketbase/pb_hooks/ root@$SERVER:/opt/abc-schedule/pocketbase/pb_hooks/
+          ssh -i ~/.ssh/deploy_key root@$SERVER "systemctl restart pocketbase 2>/dev/null || true"
