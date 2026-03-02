@@ -1,5 +1,5 @@
-import React, { Suspense, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { Suspense, useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -49,9 +49,23 @@ function TelegramAuthError() {
 
 function AppRoutes() {
   const { isLoggedIn, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem("abc-onboarding-v1")
   );
+  const [deepEventId] = useState<string | null>(() => {
+    try {
+      const sp = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param;
+      if (typeof sp === "string" && sp.startsWith("event_")) return sp.slice("event_".length);
+    } catch {}
+    return null;
+  });
+
+  useEffect(() => {
+    if (isLoggedIn && !showOnboarding && deepEventId) {
+      navigate(`/event/${deepEventId}`, { replace: true });
+    }
+  }, [isLoggedIn, showOnboarding, deepEventId, navigate]);
 
   if (isLoading) return <LoadingScreen />;
 
