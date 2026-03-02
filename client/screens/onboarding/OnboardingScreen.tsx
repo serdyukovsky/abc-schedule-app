@@ -13,6 +13,8 @@ interface Props {
 
 const TOTAL = 3;
 const TITLE_ROW_TOP = 62;
+const TAP_MOVE_THRESHOLD = 18;
+const SWIPE_THRESHOLD = 56;
 
 export default function OnboardingScreen({ onDone }: Props) {
   const [current, setCurrent] = useState(0);
@@ -20,7 +22,7 @@ export default function OnboardingScreen({ onDone }: Props) {
   const [tracks, setTracks] = useState<TrackRecord[]>([]);
   const insets = useSafeAreaInsets();
   const { hapticSelection } = useTelegram();
-  const touchStartX = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
 
   useEffect(() => {
@@ -49,19 +51,37 @@ export default function OnboardingScreen({ onDone }: Props) {
     }
   };
 
+  const navigateByClientX = (clientX: number, target: HTMLElement) => {
+    const rect = target.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const w = rect.width;
+    if (x < w / 3) goPrev();
+    else goNext();
+  };
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    suppressClickUntil.current = Date.now() + 500;
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(delta) > 50) {
-      suppressClickUntil.current = Date.now() + 700;
-      if (delta < 0) goNext();
+    if (!touchStartRef.current) return;
+    const t = e.changedTouches[0];
+    const deltaX = t.clientX - touchStartRef.current.x;
+    const deltaY = t.clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    // Prevent ghost click after touch handling.
+    suppressClickUntil.current = Date.now() + 420;
+
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) goNext();
       else goPrev();
+      return;
+    }
+
+    if (Math.abs(deltaX) <= TAP_MOVE_THRESHOLD && Math.abs(deltaY) <= TAP_MOVE_THRESHOLD) {
+      navigateByClientX(t.clientX, e.currentTarget as HTMLElement);
     }
   };
 
@@ -69,17 +89,16 @@ export default function OnboardingScreen({ onDone }: Props) {
   // regardless of where the phone shell is positioned on screen.
   const handleTap = (e: React.MouseEvent) => {
     if (Date.now() < suppressClickUntil.current) return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const w = rect.width;
-    if (x < w / 3) goPrev();
-    else goNext();
+    navigateByClientX(e.clientX, e.currentTarget as HTMLElement);
   };
 
+  const progressTop = Math.max(TITLE_ROW_TOP, insets.top + 10);
+  const buttonBottom = 24 + insets.bottom;
+
   const currentSlide =
-    current === 0 ? <Slide1Tracks key="s1" tracks={tracks} /> :
-    current === 1 ? <Slide2Speakers key="s2" speakers={speakers} /> :
-                   <Slide3Reminder key="s3" />;
+    current === 0 ? <Slide1Tracks key="s1" tracks={tracks} topInset={insets.top} bottomInset={insets.bottom} /> :
+    current === 1 ? <Slide2Speakers key="s2" speakers={speakers} topInset={insets.top} bottomInset={insets.bottom} /> :
+                   <Slide3Reminder key="s3" topInset={insets.top} bottomInset={insets.bottom} />;
 
   return (
     <div
@@ -94,13 +113,13 @@ export default function OnboardingScreen({ onDone }: Props) {
       <div
         style={{
           position: "absolute",
-          top: TITLE_ROW_TOP,
+          top: progressTop,
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
           gap: 5,
           alignItems: "center",
-          zIndex: 10,
+          zIndex: 80,
           pointerEvents: "none",
         }}
       >
@@ -123,11 +142,11 @@ export default function OnboardingScreen({ onDone }: Props) {
       <div
         style={{
           position: "absolute",
-          bottom: 28 + insets.bottom,
+          bottom: buttonBottom,
           left: 0,
           right: 0,
-          zIndex: 10,
-          pointerEvents: "none",
+          zIndex: 120,
+          pointerEvents: "auto",
           display: "flex",
           justifyContent: "center",
         }}
@@ -149,6 +168,7 @@ export default function OnboardingScreen({ onDone }: Props) {
             letterSpacing: 0.2,
           }}
           onClick={(e) => { e.stopPropagation(); goNext(); }}
+          onTouchEnd={(e) => { e.stopPropagation(); }}
         >
           {current < TOTAL - 1 ? "Далее →" : "К расписанию"}
         </button>

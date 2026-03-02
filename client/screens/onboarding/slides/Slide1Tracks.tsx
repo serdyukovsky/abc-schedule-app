@@ -3,6 +3,8 @@ import type { TrackRecord } from "@/lib/pb-types";
 
 interface Props {
   tracks: TrackRecord[];
+  topInset: number;
+  bottomInset: number;
 }
 
 const TOP_SECTION_PADDING = 62;
@@ -26,10 +28,12 @@ const PREVIEW_TEMPLATES = [
   { title: "Сильные связи для новых проектов", speaker: "Елена Морозова", location: "Зал F" },
 ];
 
-export default function Slide1Tracks({ tracks }: Props) {
+export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
   const list = tracks.length > 0 ? tracks : PLACEHOLDER_TRACKS;
   const displayTracks = list.slice(0, 7);
   const [activeTrackIndex, setActiveTrackIndex] = useState(0);
+  const topPadding = Math.max(TOP_SECTION_PADDING, topInset + 10);
+  const bottomTextPadding = Math.max(160, 126 + bottomInset);
 
   useEffect(() => {
     if (displayTracks.length <= 1) return;
@@ -81,7 +85,7 @@ export default function Slide1Tracks({ tracks }: Props) {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          paddingTop: TOP_SECTION_PADDING,
+          paddingTop: topPadding,
           paddingLeft: CONTENT_HORIZONTAL_PADDING,
           paddingRight: CONTENT_HORIZONTAL_PADDING,
         }}
@@ -203,9 +207,10 @@ export default function Slide1Tracks({ tracks }: Props) {
       {/* Bottom text */}
       <div
         style={{
-          padding: "24px 24px 160px",
+          padding: `24px 24px ${bottomTextPadding}px`,
           animation: "fadeInUp 0.5s ease both",
           animationDelay: "0.6s",
+          pointerEvents: "none",
         }}
       >
         <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: "34px", marginBottom: 10 }}>

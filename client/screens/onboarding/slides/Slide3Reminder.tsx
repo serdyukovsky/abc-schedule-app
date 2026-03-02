@@ -6,6 +6,11 @@ const PREVIEW_REMINDERS = [
   { id: "r3", title: "AI в операционной модели компании", speaker: "Дмитрий Козлов", time: "17:10", location: "Зал B" },
 ] as const;
 
+interface Props {
+  topInset: number;
+  bottomInset: number;
+}
+
 function TypingDots() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -26,7 +31,10 @@ function TypingDots() {
   );
 }
 
-export default function Slide3Reminder() {
+export default function Slide3Reminder({ topInset, bottomInset }: Props) {
+  const topPadding = Math.max(88, topInset + 8);
+  const bottomTextPadding = Math.max(160, 126 + bottomInset);
+
   return (
     <div
       style={{
@@ -65,7 +73,7 @@ export default function Slide3Reminder() {
       <div
         style={{
           flex: 1,
-          padding: "88px 20px 10px",
+          padding: `${topPadding}px 20px 10px`,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -150,11 +158,12 @@ export default function Slide3Reminder() {
       {/* Bottom text */}
       <div
         style={{
-          padding: "14px 24px 160px",
+          padding: `14px 24px ${bottomTextPadding}px`,
           position: "relative",
           zIndex: 4,
           animation: "fadeInUp 0.5s ease both",
           animationDelay: "0.56s",
+          pointerEvents: "none",
         }}
       >
         <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: "34px", marginBottom: 10 }}>

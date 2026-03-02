@@ -4,6 +4,8 @@ import type { SpeakerRecord } from "@/lib/pb-types";
 
 interface Props {
   speakers: SpeakerRecord[];
+  topInset: number;
+  bottomInset: number;
 }
 
 const TOP_SECTION_PADDING = 62;
@@ -231,12 +233,14 @@ function MockEventCard({
   );
 }
 
-export default function Slide2Speakers({ speakers }: Props) {
+export default function Slide2Speakers({ speakers, topInset, bottomInset }: Props) {
   const list = speakers.length >= 3 ? speakers : PLACEHOLDER_SPEAKERS;
   const [activeCard, setActiveCard] = useState(0);
   const [leavingCardId, setLeavingCardId] = useState<string | null>(null);
   const [introDone, setIntroDone] = useState(false);
   const [transitionsEnabled, setTransitionsEnabled] = useState(false);
+  const topPadding = Math.max(TOP_SECTION_PADDING, topInset + 10);
+  const bottomTextPadding = Math.max(196, 162 + bottomInset);
   const activeRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const introResolvedRef = useRef(false);
@@ -321,7 +325,7 @@ export default function Slide2Speakers({ speakers }: Props) {
       />
 
       {/* Speaker carousel */}
-      <div style={{ paddingTop: TOP_SECTION_PADDING, position: "relative" }}>
+      <div style={{ paddingTop: topPadding, position: "relative" }}>
         <div
           style={{
             fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
@@ -411,11 +415,12 @@ export default function Slide2Speakers({ speakers }: Props) {
       {/* Bottom text */}
       <div
         style={{
-          padding: "2px 24px 196px",
+          padding: `2px 24px ${bottomTextPadding}px`,
           position: "relative",
           zIndex: 40,
           animation: "fadeInUp 0.5s ease both",
           animationDelay: "0.5s",
+          pointerEvents: "none",
         }}
       >
         <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: "34px", marginBottom: 10 }}>
