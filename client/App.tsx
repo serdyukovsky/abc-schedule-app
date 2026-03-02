@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
@@ -16,6 +16,7 @@ import RegisterScreen from "@/screens/RegisterScreen";
 import MainScheduleScreen from "@/screens/MainScheduleScreen";
 import EventDetailsScreen from "@/screens/EventDetailsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import OnboardingScreen from "@/screens/onboarding/OnboardingScreen";
 
 function LoadingScreen() {
   const { theme } = useTheme();
@@ -48,6 +49,9 @@ function TelegramAuthError() {
 
 function AppRoutes() {
   const { isLoggedIn, isLoading } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem("abc-onboarding-v1")
+  );
 
   if (isLoading) return <LoadingScreen />;
 
@@ -61,6 +65,17 @@ function AppRoutes() {
         <Route path="/register" element={<RegisterScreen />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <OnboardingScreen
+        onDone={() => {
+          localStorage.setItem("abc-onboarding-v1", "1");
+          setShowOnboarding(false);
+        }}
+      />
     );
   }
 
