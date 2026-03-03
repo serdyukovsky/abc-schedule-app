@@ -427,14 +427,16 @@ bot.catch((err) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-async function start() {
-  // Ticket verification and schedule access depend on PB auth, so fail fast.
-  const pbOk = await pbAuth();
-  if (!pbOk) {
-    console.error("FATAL: PocketBase auth failed. Check PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD.");
-    process.exit(1);
-  }
+let remindersIntervalId = null;
 
+function enableReminderScheduler() {
+  if (remindersIntervalId) return;
+  console.log(`[reminders] Scheduler active — every 60s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min`);
+  checkAndSendReminders();
+  remindersIntervalId = setInterval(checkAndSendReminders, 60_000);
+}
+
+async function start() {
   try {
     await bot.launch({ dropPendingUpdates: true });
     const me = await bot.telegram.getMe();
@@ -453,13 +455,30 @@ async function start() {
     process.exit(1);
   }
 
-  console.log(`[reminders] Scheduler active — every 60s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min`);
-  checkAndSendReminders();
-  setInterval(checkAndSendReminders, 60_000);
-  // Refresh admin token every 12 h to prevent expiry.
+  if (await pbAuth()) {
+    enableReminderScheduler();
+  } else {
+    console.error("[pb] Bot started without PocketBase auth; /start works, DB features unavailable until auth succeeds.");
+  }
+
+  // Recover quickly if PB is temporarily unavailable.
+  setInterval(async () => {
+    if (pb.authStore.isValid) return;
+    const ok = await pbAuth();
+    if (ok) {
+      console.log("[pb] auth recovered");
+      enableReminderScheduler();
+    }
+  }, 60_000);
+
+  // Refresh admin token every 12h.
   setInterval(async () => {
     const ok = await pbAuth();
-    if (!ok) console.error("[pb] periodic re-auth failed");
+    if (!ok) {
+      console.error("[pb] periodic re-auth failed");
+      return;
+    }
+    enableReminderScheduler();
   }, 12 * 3_600_000);
 }
 
