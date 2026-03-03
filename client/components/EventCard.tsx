@@ -93,7 +93,7 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
 }
 
 const styles = StyleSheet.create({
-  content: { padding: Spacing.md, minHeight: 80, position: "relative" },
+  content: { padding: Spacing.lg, minHeight: 100, position: "relative" },
   mainTapArea: { paddingRight: 48 },
   topRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.xs },
   trackBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.xs },
