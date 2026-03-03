@@ -67,7 +67,7 @@ export function EventDetailsSheet({
         >
           <View style={[styles.handle, { backgroundColor: theme.separator }]} />
 
-          <View style={[styles.header, { borderBottomColor: theme.separator }]}>
+          <View style={styles.header}>
             <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
               <Text style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</Text>
             </View>
@@ -105,7 +105,7 @@ export function EventDetailsSheet({
               </View>
             ) : null}
 
-            <View style={[styles.infoSection, { borderColor: theme.separator }]}>
+            <View style={styles.infoSection}>
               <View style={styles.metaRow}>
                 <Feather name="calendar" size={16} color={theme.textSecondary} />
                 <Text style={[styles.metaText, { color: theme.text }]}>{formatDate(event.startTime)}</Text>
@@ -157,10 +157,7 @@ export function EventDetailsSheet({
           <View
             style={[
               styles.footer,
-              {
-                borderTopColor: theme.separator,
-                paddingBottom: Spacing.sm,
-              },
+              { paddingBottom: Spacing.sm },
             ]}
           >
             <Pressable
@@ -187,7 +184,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
   },
   trackBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 5, borderRadius: BorderRadius.xs },
   trackText: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
@@ -203,8 +199,6 @@ const styles = StyleSheet.create({
   speakerRole: { fontSize: 14, marginTop: 2 },
   infoSection: {
     paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
     gap: Spacing.sm,
   },
   metaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
@@ -227,7 +221,6 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { fontSize: 16, fontWeight: "600" },
   footer: {
-    borderTopWidth: 1,
     paddingTop: Spacing.md,
     paddingHorizontal: Spacing.lg,
   },
