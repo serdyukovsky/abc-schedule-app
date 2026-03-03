@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
@@ -46,6 +46,7 @@ export default function MainScheduleScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [slotLayouts, setSlotLayouts] = useState<Record<number, SlotLayout>>({});
+  const slotRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -81,9 +82,30 @@ export default function MainScheduleScreen() {
 
   const scheduleTimeSlots = useMemo(() => buildSlots(filteredEvents), [filteredEvents]);
 
+  const measureSlotLayouts = useCallback(() => {
+    const next: Record<number, SlotLayout> = {};
+    for (let i = 0; i < scheduleTimeSlots.length; i += 1) {
+      const node = slotRefs.current[i];
+      if (!node) continue;
+      next[i] = { y: node.offsetTop, height: node.offsetHeight };
+    }
+    setSlotLayouts(next);
+  }, [scheduleTimeSlots]);
+
   useEffect(() => {
     setSlotLayouts({});
-  }, [scheduleTimeSlots]);
+    if (!isScheduleView || scheduleTimeSlots.length === 0) return;
+
+    const rafId = requestAnimationFrame(measureSlotLayouts);
+    const timeoutId = window.setTimeout(measureSlotLayouts, 200);
+    window.addEventListener("resize", measureSlotLayouts);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureSlotLayouts);
+    };
+  }, [isScheduleView, scheduleTimeSlots, measureSlotLayouts]);
 
   const myScheduleSections = useMemo((): DaySection[] => {
     const byDay: Record<string, Event[]> = {};
@@ -110,16 +132,6 @@ export default function MainScheduleScreen() {
 
   const showNowIndicator = isScheduleView && isSameDay(currentDate, now);
   const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, now));
-  const setSlotLayout = useCallback((index: number, y: number, height: number) => {
-    setSlotLayouts((prev) => {
-      const existing = prev[index];
-      if (existing && Math.abs(existing.y - y) < 0.5 && Math.abs(existing.height - height) < 0.5) {
-        return prev;
-      }
-      return { ...prev, [index]: { y, height } };
-    });
-  }, []);
-
   const nowIndicatorOffset = useMemo(() => {
     if (!showNowIndicator || scheduleTimeSlots.length === 0) return null;
     if (!scheduleTimeSlots.every((_, i) => Boolean(slotLayouts[i]))) return null;
@@ -163,9 +175,8 @@ export default function MainScheduleScreen() {
               {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
                 <View
                   key={slot.time}
-                  onLayout={(e: any) => {
-                    const { y, height } = e.nativeEvent.layout;
-                    setSlotLayout(i, y, height);
+                  ref={(node: HTMLDivElement | null) => {
+                    slotRefs.current[i] = node;
                   }}
                 >
                   {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
