@@ -35,7 +35,7 @@ const miniAppDeepLink = withBuildTag(
 );
 
 // Reminder window: fire reminder when event starts in [REMIND-2 … REMIND+2] min
-const REMIND_BEFORE_MIN = parseInt(process.env.REMIND_BEFORE_MIN || "15") || 15;
+const REMIND_BEFORE_MIN = parseInt(process.env.REMIND_BEFORE_MIN || "10") || 10;
 const WINDOW_HALF_MIN   = 2;
 
 // Conference timezone: PocketBase stores times as "conference local" in UTC field.

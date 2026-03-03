@@ -169,7 +169,7 @@ export default function Slide3Reminder({ topInset, bottomInset, isDark }: Props)
                 }}
               >
                 <div style={{ color: palette.messageMain, fontSize: 13, lineHeight: "18px", marginBottom: 6 }}>
-                  Через 15 минут начнется выступление «{item.title}».
+                  Через 10 минут начнется выступление «{item.title}».
                 </div>
                 <div style={{ color: palette.messageSub, fontSize: 12, lineHeight: "16px", marginBottom: 2 }}>
                   Спикер: {item.speaker}
@@ -201,7 +201,7 @@ export default function Slide3Reminder({ topInset, bottomInset, isDark }: Props)
           Напомним<br />в боте
         </div>
         <div style={{ fontSize: 15, color: palette.desc, lineHeight: "22px" }}>
-          Получите сообщение за 15 минут до каждого выбранного выступления
+          Получите сообщение за 10 минут до каждого выбранного выступления
         </div>
       </div>
     </div>
