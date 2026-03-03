@@ -15,6 +15,7 @@ Optional env:
 - `PB_URL` (default: `http://127.0.0.1:8090`)
 - `PB_ADMIN_EMAIL` (optional, needed for `/schedule` and reminders)
 - `PB_ADMIN_PASSWORD` (optional, needed for `/schedule` and reminders)
+- `APP_BUILD_TAG` (optional, used for cache-busting mini app links)
 
 ## systemd service example
 

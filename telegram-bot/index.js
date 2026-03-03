@@ -18,7 +18,21 @@ const pbAdminPassword = process.env.PB_ADMIN_PASSWORD;
 
 // Mini App deep links
 const miniAppBaseLink = process.env.MINI_APP_BASE_LINK || "https://t.me/abcschedule_bot/app";
-const miniAppDeepLink = process.env.MINI_APP_DEEP_LINK || `${miniAppBaseLink}?startapp=main&mode=fullscreen`;
+const miniAppBuildTag = process.env.APP_BUILD_TAG || String(Math.floor(Date.now() / 1000));
+
+function withBuildTag(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.set("v", miniAppBuildTag);
+    return u.toString();
+  } catch {
+    return `${url}${url.includes("?") ? "&" : "?"}v=${encodeURIComponent(miniAppBuildTag)}`;
+  }
+}
+
+const miniAppDeepLink = withBuildTag(
+  process.env.MINI_APP_DEEP_LINK || `${miniAppBaseLink}?startapp=main&mode=fullscreen`
+);
 
 // Reminder window: fire reminder when event starts in [REMIND-2 … REMIND+2] min
 const REMIND_BEFORE_MIN = parseInt(process.env.REMIND_BEFORE_MIN || "15") || 15;
@@ -127,7 +141,7 @@ async function checkAndSendReminders() {
 
     const speaker     = event.expand?.speaker;
     const speakerLine = speaker?.name ? `\n👤 ${esc(speaker.name)}` : "";
-    const eventLink   = `${miniAppBaseLink}?startapp=event_${event.id}&mode=fullscreen`;
+    const eventLink   = withBuildTag(`${miniAppBaseLink}?startapp=event_${event.id}&mode=fullscreen`);
 
     const text =
       `🔔 <b>Через ${REMIND_BEFORE_MIN} минут начнётся:</b>\n\n` +
