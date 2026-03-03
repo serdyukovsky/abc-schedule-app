@@ -224,7 +224,7 @@ export default function MainScheduleScreen() {
                     style={[
                       styles.nowDot,
                       {
-                        top: Math.max(0, nowIndicatorOffset - 7),
+                        top: Math.max(0, nowIndicatorOffset - 4),
                         backgroundColor: theme.nowIndicator,
                       },
                     ]}
@@ -298,10 +298,10 @@ const styles = StyleSheet.create({
   },
   nowDot: {
     position: "absolute",
-    left: Spacing.lg + 56 - 7,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    left: Spacing.lg + 56 - 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     zIndex: 6,
   },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
