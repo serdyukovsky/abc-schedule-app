@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ConflictModal } from "@/components/ConflictModal";
 import { AppHeader } from "@/components/AppHeader";
 import { AppMenu } from "@/components/AppMenu";
+import { EventDetailsSheet } from "@/components/EventDetailsSheet";
 import { Event } from "@/lib/pb-types";
 
 interface TimeSlot { time: string; endTime?: string; events: Event[]; start: Date; end: Date }
@@ -60,6 +61,7 @@ export default function MainScheduleScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [slotLayouts, setSlotLayouts] = useState<Record<number, SlotLayout>>({});
   const slotRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -71,6 +73,10 @@ export default function MainScheduleScreen() {
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
+  const activeEvent = useMemo(
+    () => (activeEventId ? events.find((event) => event.id === activeEventId) ?? null : null),
+    [activeEventId, events]
+  );
 
   const matchesSearch = (event: Event, q: string) => {
     if (!q.trim()) return true;
@@ -133,7 +139,16 @@ export default function MainScheduleScreen() {
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
-    navigate(`/event/${event.id}`);
+    setActiveEventId(event.id);
+  }, []);
+
+  const handleCloseEventSheet = useCallback(() => {
+    setActiveEventId(null);
+  }, []);
+
+  const handleOpenDetailsFromSheet = useCallback((eventId: string) => {
+    setActiveEventId(null);
+    navigate(`/event/${eventId}`);
   }, [navigate]);
 
   const handleTogglePlanned = useCallback((eventId: string) => {
@@ -269,6 +284,14 @@ export default function MainScheduleScreen() {
           />
         )}
       </View>
+
+      <EventDetailsSheet
+        visible={Boolean(activeEvent)}
+        event={activeEvent}
+        onClose={handleCloseEventSheet}
+        onTogglePlanned={handleTogglePlanned}
+        onOpenDetails={handleOpenDetailsFromSheet}
+      />
 
       <AppMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
