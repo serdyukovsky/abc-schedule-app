@@ -172,6 +172,16 @@ body {
   }
 }
 
+@keyframes currentCardShimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+@keyframes liveDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.75); }
+}
+
 /* Remove default button styles */
 button {
   -webkit-appearance: none;

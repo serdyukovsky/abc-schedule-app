@@ -43,17 +43,17 @@ export function EventDetailsSheet({
           position: "absolute",
           inset: 0,
           backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "stretch",
-          justifyContent: "flex-end",
           animation: "fadeInUp 0.18s ease both",
         }}
         onClick={onClose}
       >
         <div
           style={{
-            width: "100%",
-            maxHeight: `calc(100% - ${Math.max(24, insets.top - 10)}px)`,
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            maxHeight: `calc(100% - ${insets.top + 14}px)`,
             background: theme.backgroundRoot,
             borderTopLeftRadius: BorderRadius.lg,
             borderTopRightRadius: BorderRadius.lg,
@@ -159,7 +159,7 @@ export function EventDetailsSheet({
               styles.footer,
               {
                 borderTopColor: theme.separator,
-                paddingBottom: Math.max(Spacing.md, insets.bottom),
+                paddingBottom: Spacing.sm,
               },
             ]}
           >

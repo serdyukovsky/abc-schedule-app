@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
@@ -16,29 +16,11 @@ import { Event } from "@/lib/pb-types";
 
 interface TimeSlot { time: string; endTime?: string; events: Event[]; start: Date; end: Date }
 interface DaySection { date: Date; dateLabel: string; slots: TimeSlot[] }
-interface SlotLayout { y: number; height: number }
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "long", month: "short", day: "numeric" });
 const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-
-function toRgba(color: string, alpha: number): string {
-  const a = Math.max(0, Math.min(1, alpha));
-  if (!color) return `rgba(37, 150, 190, ${a})`;
-  if (color.startsWith("rgba(") || color.startsWith("rgb(")) return color;
-  if (color.startsWith("#")) {
-    const hex = color.slice(1);
-    const normalized = hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex;
-    if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
-      const r = parseInt(normalized.slice(0, 2), 16);
-      const g = parseInt(normalized.slice(2, 4), 16);
-      const b = parseInt(normalized.slice(4, 6), 16);
-      return `rgba(${r}, ${g}, ${b}, ${a})`;
-    }
-  }
-  return color;
-}
 
 export default function MainScheduleScreen() {
   const { theme } = useTheme();
@@ -60,14 +42,6 @@ export default function MainScheduleScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
-  const [now, setNow] = useState(() => new Date());
-  const [slotLayouts, setSlotLayouts] = useState<Record<number, SlotLayout>>({});
-  const slotRefs = useRef<Record<number, HTMLDivElement | null>>({});
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
@@ -106,30 +80,6 @@ export default function MainScheduleScreen() {
 
   const scheduleTimeSlots = useMemo(() => buildSlots(filteredEvents), [filteredEvents]);
 
-  const measureSlotLayouts = useCallback(() => {
-    const next: Record<number, SlotLayout> = {};
-    for (let i = 0; i < scheduleTimeSlots.length; i += 1) {
-      const node = slotRefs.current[i];
-      if (!node) continue;
-      next[i] = { y: node.offsetTop, height: node.offsetHeight };
-    }
-    setSlotLayouts(next);
-  }, [scheduleTimeSlots]);
-
-  useEffect(() => {
-    setSlotLayouts({});
-    if (!isScheduleView || scheduleTimeSlots.length === 0) return;
-
-    const rafId = requestAnimationFrame(measureSlotLayouts);
-    const timeoutId = window.setTimeout(measureSlotLayouts, 200);
-    window.addEventListener("resize", measureSlotLayouts);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("resize", measureSlotLayouts);
-    };
-  }, [isScheduleView, scheduleTimeSlots, measureSlotLayouts]);
 
   const myScheduleSections = useMemo((): DaySection[] => {
     const byDay: Record<string, Event[]> = {};
@@ -158,36 +108,6 @@ export default function MainScheduleScreen() {
     togglePlanned(eventId);
   }, [events, hasConflict, togglePlanned]);
 
-  const showNowIndicator = isScheduleView && isSameDay(currentDate, now);
-  const nowIndicatorOffset = useMemo(() => {
-    if (!showNowIndicator || scheduleTimeSlots.length === 0) return null;
-    if (!scheduleTimeSlots.every((_, i) => Boolean(slotLayouts[i]))) return null;
-
-    const nowMs = now.getTime();
-    const firstStartMs = scheduleTimeSlots[0].start.getTime();
-    if (nowMs <= firstStartMs) {
-      return slotLayouts[0].y;
-    }
-
-    for (let i = 0; i < scheduleTimeSlots.length; i += 1) {
-      const slot = scheduleTimeSlots[i];
-      const layout = slotLayouts[i];
-      const segmentStartMs = slot.start.getTime();
-      const segmentEndMs = i < scheduleTimeSlots.length - 1
-        ? scheduleTimeSlots[i + 1].start.getTime()
-        : slot.end.getTime();
-
-      if (nowMs <= segmentEndMs) {
-        const duration = Math.max(1, segmentEndMs - segmentStartMs);
-        const progress = Math.min(1, Math.max(0, (nowMs - segmentStartMs) / duration));
-        return layout.y + layout.height * progress;
-      }
-    }
-
-    const lastIndex = scheduleTimeSlots.length - 1;
-    const lastLayout = slotLayouts[lastIndex];
-    return lastLayout.y + lastLayout.height;
-  }, [showNowIndicator, scheduleTimeSlots, slotLayouts, now]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -200,12 +120,7 @@ export default function MainScheduleScreen() {
             <View style={styles.scheduleSlotsContainer}>
               <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
               {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
-                <View
-                  key={slot.time}
-                  ref={(node: HTMLDivElement | null) => {
-                    slotRefs.current[i] = node;
-                  }}
-                >
+                <View key={slot.time}>
                   {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
                   <TimeSlotRow
                     time={slot.time}
@@ -219,30 +134,6 @@ export default function MainScheduleScreen() {
               )) : (
                 <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
               )}
-              {showNowIndicator && nowIndicatorOffset !== null ? (
-                <>
-                  <View
-                    pointerEvents="none"
-                    style={[
-                      styles.nowTrail,
-                      {
-                        height: Math.max(0, nowIndicatorOffset),
-                        backgroundImage: `linear-gradient(180deg, ${toRgba(theme.nowIndicator, 0)} 0%, ${toRgba(theme.nowIndicator, 1)} 100%)`,
-                      },
-                    ]}
-                  />
-                  <View
-                    pointerEvents="none"
-                    style={[
-                      styles.nowDot,
-                      {
-                        top: Math.max(0, nowIndicatorOffset - 4),
-                        backgroundColor: theme.nowIndicator,
-                      },
-                    ]}
-                  />
-                </>
-              ) : null}
             </View>
           </>
         ) : (
@@ -309,21 +200,6 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scheduleSlotsContainer: { position: "relative" },
   timelineRail: { position: "absolute", left: Spacing.lg + 56, top: 0, bottom: 0, width: 1 },
-  nowTrail: {
-    position: "absolute",
-    left: Spacing.lg + 56,
-    top: 0,
-    width: 1,
-    zIndex: 5,
-  },
-  nowDot: {
-    position: "absolute",
-    left: Spacing.lg + 56 - 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    zIndex: 6,
-  },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
   dateHeader: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },
   dateLabel: { fontSize: 16, fontWeight: "600" },
