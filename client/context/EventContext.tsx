@@ -84,11 +84,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       const isCurrentlyPlanned = plannedIds.has(eventId);
 
       // Haptic feedback (immediate, before API call)
-      if (isCurrentlyPlanned) {
-        hapticNotification("warning");
-      } else {
-        hapticNotification("warning");
-      }
+      hapticNotification("warning");
 
       // Optimistic update
       setPlannedIds((prev) => {

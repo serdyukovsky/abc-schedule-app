@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
-import { useTelegram } from "@/hooks/useTelegram";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface FilterChipsProps {
@@ -12,7 +11,6 @@ interface FilterChipsProps {
 
 export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
   const { theme } = useTheme();
-  const { hapticNotification } = useTelegram();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.container}>
       {options.map((option) => {
@@ -20,7 +18,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
         return (
           <Pressable
             key={option}
-            onPress={() => { hapticNotification("warning"); onSelect(option); }}
+            onPress={() => onSelect(option)}
             style={[styles.chip, { backgroundColor: isSelected ? theme.link : theme.backgroundSecondary }]}
           >
             <Text style={[styles.chipText, { color: isSelected ? theme.buttonText : theme.textSecondary }]}>

@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
-import { useTelegram } from "@/hooks/useTelegram";
 import { Spacing } from "@/constants/theme";
 import { LogoABC } from "@/components/LogoABC";
 
@@ -15,8 +14,6 @@ interface AppHeaderProps {
 
 export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: AppHeaderProps) {
   const { theme, isDark } = useTheme();
-  const { hapticNotification } = useTelegram();
-
   return (
     <View style={[styles.container, { paddingTop: 14 + topInset }]}>
       <LogoABC height={24} color={theme.text} />
@@ -26,7 +23,7 @@ export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: Ap
           return (
             <Pressable
               key={tab}
-              onPress={() => { hapticNotification("warning"); onSelectSegment(i); }}
+              onPress={() => onSelectSegment(i)}
               style={[styles.tab, isActive && [styles.activeTab, { backgroundColor: isDark ? "rgba(99,99,102,0.9)" : "#FFFFFF" }]]}
             >
               <Text style={[styles.tabText, { color: isActive ? theme.text : theme.textSecondary, fontWeight: isActive ? "600" : "400" }]}>

@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet } from "@/components/primitives";
 import { Feather } from "@/components/Icon";
 import { useTheme } from "@/hooks/useTheme";
-import { useTelegram } from "@/hooks/useTelegram";
 import { Spacing } from "@/constants/theme";
 
 interface DateOption { date: Date; label: string; shortLabel: string }
@@ -20,8 +19,6 @@ const formatMonth = (d: Date) => d.toLocaleDateString("ru-RU", { month: "short" 
 
 export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isSearchActive = false, onMenuPress }: DateSelectorProps) {
   const { theme, isDark } = useTheme();
-  const { hapticNotification } = useTelegram();
-
   const bgContainer = isDark ? "rgba(45,45,48,0.92)" : "rgba(245,245,245,0.92)";
   const borderContainer = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
   const iconColor = isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)";
@@ -35,7 +32,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
             return (
               <Pressable
                 key={i}
-                onPress={() => { hapticNotification("warning"); onSelect(opt.date); }}
+                onPress={() => onSelect(opt.date)}
                 style={[styles.dateButton, isSelected && { backgroundColor: isDark ? "rgba(210,7,41,0.45)" : "rgba(210,7,41,0.85)" }]}
                 testID={`date-selector-${i}`}
               >
@@ -52,7 +49,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
       </View>
 
       <Pressable
-        onPress={() => { hapticNotification("warning"); onSearchPress(); }}
+        onPress={onSearchPress}
         style={[styles.iconButton, { backgroundColor: bgContainer, borderColor: borderContainer }, isSearchActive && { backgroundColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.85)" }]}
         testID="search-button"
       >
@@ -60,7 +57,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
       </Pressable>
 
       <Pressable
-        onPress={() => { hapticNotification("warning"); onMenuPress(); }}
+        onPress={onMenuPress}
         style={[styles.iconButton, { backgroundColor: bgContainer, borderColor: borderContainer }]}
       >
         <Feather name="user" size={20} color={iconColor} />
