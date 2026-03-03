@@ -35,7 +35,7 @@ function TelegramAuthError() {
         Доступ не подтверждён
       </Text>
       <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginBottom: 20 }}>
-        Сначала откройте бота, нажмите /start и введите номер билета. После привязки билета вернитесь в приложение.
+        Откройте бота, нажмите /start и перейдите в приложение по кнопке «Открыть расписание», затем повторите вход.
       </Text>
       <Pressable
         onPress={() => window.location.reload()}

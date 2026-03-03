@@ -58,20 +58,36 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
   try {
     record = $app.findFirstRecordByFilter(
       "users",
-      "telegramId = {:telegramId} && ticketCode != ''",
+      "telegramId = {:telegramId}",
       { telegramId }
     );
   } catch (_) {}
 
   if (!record) {
-    return e.json(403, {
-      error: "ticket_required",
-      message: "Access requires ticket verification in Telegram bot",
-    });
+    try {
+      const usersCollection = $app.findCollectionByNameOrId("users");
+      const displayName =
+        [userData.first_name || "", userData.last_name || ""].join(" ").trim() ||
+        userData.username ||
+        `Telegram ${telegramId}`;
+
+      record = new Record(usersCollection);
+      record.set("email", `tg_${telegramId}@telegram.local`);
+      record.setEmailVisibility(false);
+      record.setVerified(true);
+      record.setRandomPassword();
+      record.set("name", displayName);
+      record.set("telegramId", telegramId);
+      record.set("telegramUsername", userData.username || "");
+      $app.save(record);
+    } catch (err) {
+      return e.json(500, { error: "Failed to create user" });
+    }
   }
 
-  if (userData.username && record.get("telegramUsername") !== userData.username) {
-    record.set("telegramUsername", userData.username);
+  const nextUsername = userData.username || "";
+  if (record.get("telegramUsername") !== nextUsername) {
+    record.set("telegramUsername", nextUsername);
     $app.save(record);
   }
 

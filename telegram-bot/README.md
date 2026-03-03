@@ -13,8 +13,8 @@ Optional env:
 
 - `MINI_APP_DEEP_LINK` (default: `https://t.me/abcschedule_bot/app?startapp=main&mode=fullscreen`)
 - `PB_URL` (default: `http://127.0.0.1:8090`)
-- `PB_ADMIN_EMAIL` (required)
-- `PB_ADMIN_PASSWORD` (required)
+- `PB_ADMIN_EMAIL` (optional, needed for `/schedule` and reminders)
+- `PB_ADMIN_PASSWORD` (optional, needed for `/schedule` and reminders)
 
 ## systemd service example
 

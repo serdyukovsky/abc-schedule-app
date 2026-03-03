@@ -56,10 +56,6 @@ async function ensureAuth(ctx) {
   return ok;
 }
 
-// ─── In-memory onboarding state ──────────────────────────────────────────────
-// Maps telegramId (string) → { step: "awaiting_ticket" }
-const userState = new Map();
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Escape HTML special chars for safe use in parse_mode: "HTML" */
@@ -83,18 +79,14 @@ function toPbDate(d) {
   return d.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-function hasTicketCode(user) {
-  return Boolean(String(user?.ticketCode || "").trim());
-}
-
 async function findUsersByTelegramId(telegramId) {
   return pb.collection("users").getFullList({
     filter: `telegramId = '${telegramId}'`,
   });
 }
 
-function pickLinkedUser(users) {
-  return users.find((u) => hasTicketCode(u)) || null;
+function pickUser(users) {
+  return users[0] || null;
 }
 
 // ─── Reminder scheduler ───────────────────────────────────────────────────────
@@ -170,11 +162,12 @@ async function handleScheduleCommand(ctx) {
     return ctx.reply("Не удалось получить данные. Попробуй позже.");
   }
 
-  const user = pickLinkedUser(users);
+  const user = pickUser(users);
   if (!user) {
     return ctx.reply(
-      "Доступ в приложение открывается после проверки билета.\n\n" +
-      "Нажми /start и введи номер билета."
+      "Сначала открой приложение кнопкой ниже, чтобы завершить вход.\n" +
+      "После этого команда /schedule будет показывать твой план.",
+      openKeyboard
     );
   }
 
@@ -217,93 +210,6 @@ async function handleScheduleCommand(ctx) {
   });
 }
 
-// ─── Ticket verification ──────────────────────────────────────────────────────
-
-async function handleTicketInput(ctx) {
-  const telegramId = String(ctx.from.id);
-  const ticket     = ctx.message.text.trim();
-
-  if (!ticket) {
-    return ctx.reply("Введи номер билета.");
-  }
-
-  if (!await ensureAuth(ctx)) return;
-
-  let users;
-  try {
-    users = await pb.collection("users").getFullList({
-      filter: `ticketCode = '${ticket.replace(/'/g, "\\'")}'`,
-    });
-  } catch (err) {
-    console.error("[ticket] lookup failed:", err.message);
-    return ctx.reply("Не удалось проверить билет. Попробуй позже.");
-  }
-
-  if (!users.length) {
-    return ctx.reply(
-      "Билет не найден 🤔\n\n" +
-      "Проверь номер и попробуй ещё раз. Если не получается — обратись к организаторам."
-    );
-  }
-
-  const user = users[0];
-
-  // Ticket already linked to a different Telegram account
-  if (user.telegramId && user.telegramId !== telegramId) {
-    return ctx.reply(
-      "Этот билет уже привязан к другому аккаунту.\n" +
-      "Если это ошибка — обратись к организаторам."
-    );
-  }
-
-  // Handle legacy auto-created records with telegramId but without ticketCode.
-  // If current Telegram account is already linked to another valid ticket, deny reassignment.
-  let sameTelegramUsers = [];
-  try {
-    sameTelegramUsers = await findUsersByTelegramId(telegramId);
-  } catch (err) {
-    console.error("[ticket] same telegram lookup failed:", err.message);
-    return ctx.reply("Не удалось проверить привязку. Попробуй позже.");
-  }
-
-  for (const existing of sameTelegramUsers) {
-    if (existing.id === user.id) continue;
-    if (hasTicketCode(existing)) {
-      return ctx.reply(
-        "Этот Telegram-аккаунт уже привязан к другому билету.\n" +
-        "Если это ошибка — обратись к организаторам."
-      );
-    }
-  }
-
-  // Link this Telegram account to the user record
-  try {
-    for (const existing of sameTelegramUsers) {
-      if (existing.id === user.id) continue;
-      await pb.collection("users").update(existing.id, {
-        telegramId: "",
-        telegramUsername: "",
-      });
-    }
-    await pb.collection("users").update(user.id, {
-      telegramId:       telegramId,
-      telegramUsername: ctx.from.username || "",
-    });
-  } catch (err) {
-    console.error("[ticket] update failed:", err.message);
-    return ctx.reply("Не удалось сохранить данные. Попробуй позже.");
-  }
-
-  userState.delete(telegramId);
-
-  await ctx.reply(
-    "Отлично, ты в системе! ✅\n\n" +
-    "Теперь тебе доступно полное расписание с фильтрами по потокам (Бизнес, Маркетинг, Команды) " +
-    "и личный кабинет. Жми кнопку ниже, чтобы войти в приложение.",
-    openKeyboard
-  );
-}
-
 // ─── Bot setup ────────────────────────────────────────────────────────────────
 
 const bot = new Telegraf(botToken);
@@ -326,31 +232,12 @@ bot.start(async (ctx) => {
   );
 });
 
-// "Поехали!" → check registration, then route accordingly
+// "Поехали!" → open mini app
 bot.action("onboarding_start", async (ctx) => {
   await ctx.answerCbQuery();
-
-  const telegramId = String(ctx.from.id);
-
-  if (!await ensureAuth(ctx)) return;
-
-  // Check if user already registered (PocketBase call is here, not in /start)
-  try {
-    const users = await findUsersByTelegramId(telegramId);
-    const user = pickLinkedUser(users);
-    if (user) {
-      return ctx.reply(
-        "Ты уже в системе! ✅\n\nЖми кнопку, чтобы открыть расписание:",
-        openKeyboard
-      );
-    }
-  } catch {}
-
-  // New user — Message 2: Ask for ticket number
-  userState.set(telegramId, { step: "awaiting_ticket" });
   await ctx.reply(
-    "Чтобы я открыл для тебя все функции приложения, введи номер своего билета.\n\n" +
-    "Его можно найти в письме с подтверждением или на твоём бэйдже (если ты уже на месте)."
+    "Отлично, поехали! 🚀\n\nЖми кнопку ниже, чтобы открыть расписание:",
+    openKeyboard
   );
 });
 
@@ -359,65 +246,23 @@ bot.action("onboarding_start", async (ctx) => {
 bot.command("schedule", handleScheduleCommand);
 
 bot.command("help", async (ctx) => {
-  const telegramId = String(ctx.from?.id || "");
   const baseText =
     "<b>ABC Forum — расписание кемпа</b>\n\n" +
     "/schedule — мой план на сегодня\n" +
-    "/start — проверка билета и доступ\n\n";
-
-  if (!telegramId) {
-    return ctx.reply(
-      `${baseText}Сначала введи номер билета через /start.`,
-      { parse_mode: "HTML" }
-    );
-  }
-
-  if (!await ensureAuth(ctx)) return;
-
-  try {
-    const users = await findUsersByTelegramId(telegramId);
-    const user = pickLinkedUser(users);
-    if (user) {
-      return ctx.reply(
-        `${baseText}Всё расписание — в приложении 👇`,
-        { parse_mode: "HTML", ...openKeyboard }
-      );
-    }
-  } catch (_) {}
+    "/start — открыть приложение\n\n";
 
   await ctx.reply(
-    `${baseText}Сначала введи номер билета через /start.`,
-    { parse_mode: "HTML" }
+    `${baseText}Всё расписание — в приложении 👇`,
+    { parse_mode: "HTML", ...openKeyboard }
   );
 });
 
-// ─── Text: ticket input or fallback ──────────────────────────────────────────
+// ─── Text fallback ────────────────────────────────────────────────────────────
 
 bot.on("text", async (ctx) => {
-  const telegramId = String(ctx.from?.id || "");
-  const state = userState.get(telegramId);
-
-  if (state?.step === "awaiting_ticket") {
-    return handleTicketInput(ctx);
-  }
-
-  if (!telegramId || !await ensureAuth(null)) {
-    return ctx.reply("Сервис временно недоступен. Попробуйте позже.");
-  }
-
-  try {
-    const users = await findUsersByTelegramId(telegramId);
-    const user = pickLinkedUser(users);
-    if (user) {
-      return ctx.reply(
-        "Используй кнопку ниже, чтобы открыть расписание 👇",
-        openKeyboard
-      );
-    }
-  } catch (_) {}
-
   await ctx.reply(
-    "Сначала нажми /start и введи номер билета, чтобы получить доступ к приложению."
+    "Используй кнопку ниже, чтобы открыть расписание 👇",
+    openKeyboard
   );
 });
 
