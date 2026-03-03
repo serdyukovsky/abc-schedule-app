@@ -23,6 +23,23 @@ const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "
 const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
+function toRgba(color: string, alpha: number): string {
+  const a = Math.max(0, Math.min(1, alpha));
+  if (!color) return `rgba(37, 150, 190, ${a})`;
+  if (color.startsWith("rgba(") || color.startsWith("rgb(")) return color;
+  if (color.startsWith("#")) {
+    const hex = color.slice(1);
+    const normalized = hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex;
+    if (/^[0-9a-fA-F]{6}$/.test(normalized)) {
+      const r = parseInt(normalized.slice(0, 2), 16);
+      const g = parseInt(normalized.slice(2, 4), 16);
+      const b = parseInt(normalized.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+  }
+  return color;
+}
+
 export default function MainScheduleScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -191,17 +208,30 @@ export default function MainScheduleScreen() {
                 <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
               )}
               {showNowIndicator && nowIndicatorOffset !== null ? (
-                <View
-                  pointerEvents="none"
-                  style={[
-                    styles.nowDot,
-                    {
-                      top: Math.max(0, nowIndicatorOffset - 6),
-                      backgroundColor: theme.nowIndicator,
-                      borderColor: theme.backgroundRoot,
-                    },
-                  ]}
-                />
+                <>
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.nowTrail,
+                      {
+                        height: Math.max(0, nowIndicatorOffset),
+                        background: `linear-gradient(180deg, ${toRgba(theme.nowIndicator, 0.05)} 0%, ${toRgba(theme.nowIndicator, 0.34)} 100%)`,
+                      },
+                    ]}
+                  />
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.nowDot,
+                      {
+                        top: Math.max(0, nowIndicatorOffset - 7),
+                        backgroundColor: theme.nowIndicator,
+                        borderColor: theme.backgroundRoot,
+                        boxShadow: `0 0 0 5px ${toRgba(theme.nowIndicator, 0.16)}, 0 0 16px ${toRgba(theme.nowIndicator, 0.5)}`,
+                      },
+                    ]}
+                  />
+                </>
               ) : null}
             </View>
           </>
@@ -261,12 +291,19 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scheduleSlotsContainer: { position: "relative" },
   timelineRail: { position: "absolute", left: Spacing.lg + 56, top: 0, bottom: 0, width: 1 },
+  nowTrail: {
+    position: "absolute",
+    left: Spacing.lg + 56,
+    top: 0,
+    width: 2,
+    zIndex: 5,
+  },
   nowDot: {
     position: "absolute",
-    left: Spacing.lg + 56 - 6,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    left: Spacing.lg + 56 - 7,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     borderWidth: 2,
     zIndex: 6,
   },
