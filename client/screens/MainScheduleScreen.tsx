@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
@@ -15,7 +15,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { AppMenu } from "@/components/AppMenu";
 import { Event } from "@/lib/pb-types";
 
-interface TimeSlot { time: string; endTime?: string; events: Event[] }
+interface TimeSlot { time: string; endTime?: string; events: Event[]; start: Date; end: Date }
 interface DaySection { date: Date; dateLabel: string; slots: TimeSlot[] }
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -43,6 +43,12 @@ export default function MainScheduleScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();
@@ -65,8 +71,9 @@ export default function MainScheduleScreen() {
     evts.forEach((e) => { const k = formatTime(e.startTime); if (!grouped[k]) grouped[k] = []; grouped[k].push(e); });
     return Object.keys(grouped).sort().map((time) => {
       const slotEvts = grouped[time];
+      const earliest = slotEvts.reduce((l, e) => e.startTime < l ? e.startTime : l, slotEvts[0].startTime);
       const latest = slotEvts.reduce((l, e) => e.endTime > l ? e.endTime : l, slotEvts[0].endTime);
-      return { time, endTime: formatTime(latest), events: slotEvts };
+      return { time, endTime: formatTime(latest), events: slotEvts, start: earliest, end: latest };
     });
   };
 
@@ -95,8 +102,23 @@ export default function MainScheduleScreen() {
     togglePlanned(eventId);
   }, [events, hasConflict, togglePlanned]);
 
-  const showNowIndicator = isScheduleView && isSameDay(currentDate, new Date());
-  const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, new Date()));
+  const showNowIndicator = isScheduleView && isSameDay(currentDate, now);
+  const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, now));
+  const nowIndicatorIndex = useMemo(() => {
+    if (!showNowIndicator || scheduleTimeSlots.length === 0) return -1;
+
+    if (now < scheduleTimeSlots[0].start) return 0;
+
+    for (let i = 0; i < scheduleTimeSlots.length; i += 1) {
+      const slot = scheduleTimeSlots[i];
+      const next = scheduleTimeSlots[i + 1];
+
+      if (now >= slot.start && now < slot.end) return i + 1;
+      if (next && now >= slot.end && now < next.start) return i + 1;
+    }
+
+    return scheduleTimeSlots.length;
+  }, [showNowIndicator, scheduleTimeSlots, now]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -106,19 +128,20 @@ export default function MainScheduleScreen() {
         {isScheduleView ? (
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
-            {showNowIndicator ? <NowIndicator /> : null}
             {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
-              <View key={slot.time}>
+              <React.Fragment key={slot.time}>
+                {nowIndicatorIndex === i ? <NowIndicator now={now} /> : null}
                 {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
                 <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} />
-              </View>
+              </React.Fragment>
             )) : (
               <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
             )}
+            {nowIndicatorIndex === scheduleTimeSlots.length ? <NowIndicator now={now} /> : null}
           </>
         ) : (
           <>
-            {!isScheduleView && hasEventsToday ? <NowIndicator /> : null}
+            {!isScheduleView && hasEventsToday ? <NowIndicator now={now} /> : null}
             {myScheduleSections.length > 0 ? myScheduleSections.map((section, si) => (
               <View key={section.dateLabel}>
                 <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>

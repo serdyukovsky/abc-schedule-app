@@ -3,9 +3,12 @@ import { View, Text, StyleSheet } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 
-export function NowIndicator() {
+interface NowIndicatorProps {
+  now?: Date;
+}
+
+export function NowIndicator({ now = new Date() }: NowIndicatorProps) {
   const { theme } = useTheme();
-  const now = new Date();
   const time = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   return (
