@@ -119,7 +119,7 @@ export default function ProfileScreen() {
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }, { marginBottom: Spacing.md }]}>Смена пароля</Text>
             {passwordError ? <Text style={[styles.errorText, { color: theme.conflict }]}>{passwordError}</Text> : null}
-            {passwordSuccess ? <Text style={[styles.errorText, { color: theme.nowIndicator }]}>Пароль обновлён</Text> : null}
+            {passwordSuccess ? <Text style={[styles.errorText, { color: theme.accent }]}>Пароль обновлён</Text> : null}
             {[
               { label: "Старый пароль", value: currentPassword, setter: setCurrentPassword, placeholder: "Введите старый пароль" },
               { label: "Новый пароль", value: newPassword, setter: setNewPassword, placeholder: "Придумайте пароль" },

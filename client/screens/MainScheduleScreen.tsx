@@ -215,7 +215,7 @@ export default function MainScheduleScreen() {
                       styles.nowTrail,
                       {
                         height: Math.max(0, nowIndicatorOffset),
-                        background: `linear-gradient(180deg, ${toRgba(theme.nowIndicator, 0.05)} 0%, ${toRgba(theme.nowIndicator, 0.34)} 100%)`,
+                        backgroundImage: `linear-gradient(180deg, ${toRgba(theme.nowIndicator, 0)} 0%, ${toRgba(theme.nowIndicator, 1)} 100%)`,
                       },
                     ]}
                   />
@@ -226,8 +226,6 @@ export default function MainScheduleScreen() {
                       {
                         top: Math.max(0, nowIndicatorOffset - 7),
                         backgroundColor: theme.nowIndicator,
-                        borderColor: theme.backgroundRoot,
-                        boxShadow: `0 0 0 5px ${toRgba(theme.nowIndicator, 0.16)}, 0 0 16px ${toRgba(theme.nowIndicator, 0.5)}`,
                       },
                     ]}
                   />
@@ -295,7 +293,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: Spacing.lg + 56,
     top: 0,
-    width: 2,
+    width: 1,
     zIndex: 5,
   },
   nowDot: {
@@ -304,7 +302,6 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    borderWidth: 2,
     zIndex: 6,
   },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
