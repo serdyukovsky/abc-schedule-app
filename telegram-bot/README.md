@@ -16,6 +16,10 @@ Optional env:
 - `PB_ADMIN_EMAIL` (optional, needed for `/schedule` and reminders)
 - `PB_ADMIN_PASSWORD` (optional, needed for `/schedule` and reminders)
 - `APP_BUILD_TAG` (optional, used for cache-busting mini app links)
+- `REMIND_BEFORE_MIN` (default: `10`)
+- `REMINDER_WINDOW_HALF_MIN` (default: `1`; total window = `T-REMIND ± HALF`, in minutes)
+- `REMINDER_CHECK_EVERY_SEC` (default: `60`)
+- `CONF_UTC_OFFSET_HOURS` (default: `7`, Altai conference timezone)
 
 ## systemd service example
 

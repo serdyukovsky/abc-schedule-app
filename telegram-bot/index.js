@@ -34,13 +34,22 @@ const miniAppDeepLink = withBuildTag(
   process.env.MINI_APP_DEEP_LINK || `${miniAppBaseLink}?startapp=main&mode=fullscreen`
 );
 
-// Reminder window: fire reminder when event starts in [REMIND-2 … REMIND+2] min
-const REMIND_BEFORE_MIN = parseInt(process.env.REMIND_BEFORE_MIN || "10") || 10;
-const WINDOW_HALF_MIN   = 2;
+function intEnv(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === "") return fallback;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+// Reminder window: fire reminder when event starts in [REMIND-WINDOW … REMIND+WINDOW] min
+const REMIND_BEFORE_MIN = intEnv("REMIND_BEFORE_MIN", 10);
+const WINDOW_HALF_MIN   = Math.max(0, intEnv("REMINDER_WINDOW_HALF_MIN", 1));
+const SCHEDULER_INTERVAL_MS = Math.max(15_000, intEnv("REMINDER_CHECK_EVERY_SEC", 60) * 1000);
 
 // Conference timezone: PocketBase stores times as "conference local" in UTC field.
 // Set CONF_UTC_OFFSET_HOURS to the conference timezone offset (e.g. 6 for UTC+6)
-const CONF_OFFSET_MS = (parseInt(process.env.CONF_UTC_OFFSET_HOURS || "0") || 0) * 3_600_000;
+const CONF_OFFSET_HOURS = intEnv("CONF_UTC_OFFSET_HOURS", 7);
+const CONF_OFFSET_MS = CONF_OFFSET_HOURS * 3_600_000;
 
 // ─── PocketBase client ────────────────────────────────────────────────────────
 
@@ -113,52 +122,75 @@ async function checkAndSendReminders() {
   const winStart = new Date(nowConf.getTime() + (REMIND_BEFORE_MIN - WINDOW_HALF_MIN) * 60_000);
   const winEnd   = new Date(nowConf.getTime() + (REMIND_BEFORE_MIN + WINDOW_HALF_MIN) * 60_000);
 
-  let schedules;
+  // Query target events first and then collect user schedules for them.
+  // This avoids relying on relation-field filters in user_schedules.
+  let reminderEvents;
   try {
-    schedules = await pb.collection("user_schedules").getFullList({
-      filter: `event.startTime >= '${toPbDate(winStart)}' && event.startTime <= '${toPbDate(winEnd)}'`,
-      expand: "event.speaker,user",
+    reminderEvents = await pb.collection("events").getFullList({
+      filter: `startTime >= '${toPbDate(winStart)}' && startTime <= '${toPbDate(winEnd)}'`,
+      sort: "startTime",
     });
   } catch (err) {
     console.error("[reminders] fetch failed:", err.message);
     return;
   }
 
-  if (!schedules.length) return;
-  console.log(`[reminders] ${schedules.length} schedule(s) in window`);
+  if (!reminderEvents.length) return;
+  console.log(`[reminders] ${reminderEvents.length} event(s) in T-${REMIND_BEFORE_MIN} window`);
 
-  for (const sched of schedules) {
-    const user  = sched.expand?.user;
-    const event = sched.expand?.event;
-    if (!user?.telegramId || !event) continue;
-
-    // Idempotency: create sent_reminders first — unique constraint blocks duplicates
+  for (const event of reminderEvents) {
+    let schedules;
     try {
-      await pb.collection("sent_reminders").create({ user: sched.user, event: sched.event });
-    } catch {
-      continue; // already sent
+      schedules = await pb.collection("user_schedules").getFullList({
+        filter: `event = '${event.id}'`,
+        expand: "event.speaker,user",
+      });
+    } catch (err) {
+      console.error(`[reminders] schedules fetch failed for event ${event.id}:`, err.message);
+      continue;
     }
 
-    const speaker     = event.expand?.speaker;
-    const speakerLine = speaker?.name ? `\n👤 ${esc(speaker.name)}` : "";
-    const eventLink   = withBuildTag(`${miniAppBaseLink}?startapp=event_${event.id}&mode=fullscreen`);
+    if (!schedules.length) continue;
 
-    const text =
-      `🔔 <b>Через ${REMIND_BEFORE_MIN} минут начнётся:</b>\n\n` +
-      `<b>${esc(event.title)}</b>\n` +
-      `📍 ${esc(event.location)} · ${fmtTime(event.startTime)}` +
-      speakerLine;
+    for (const sched of schedules) {
+      const user = sched.expand?.user;
+      const expandedEvent = sched.expand?.event || event;
+      if (!user?.telegramId || !expandedEvent) continue;
 
-    try {
-      await bot.telegram.sendMessage(user.telegramId, text, {
-        parse_mode: "HTML",
-        ...Markup.inlineKeyboard([
-          [Markup.button.url("📅 Открыть в расписании", eventLink)],
-        ]),
-      });
-      console.log(`[reminders] → sent to ${user.telegramId} for "${event.title}"`);
-    } catch (err) {
-      console.error(`[reminders] sendMessage to ${user.telegramId} failed:`, err.message);
+      let sentMarker = null;
+      try {
+        sentMarker = await pb.collection("sent_reminders").create({ user: sched.user, event: sched.event });
+      } catch {
+        continue; // already sent for this user/event
+      }
+
+      const speaker     = expandedEvent.expand?.speaker;
+      const speakerLine = speaker?.name ? `\n👤 ${esc(speaker.name)}` : "";
+      const eventLink   = withBuildTag(`${miniAppBaseLink}?startapp=event_${expandedEvent.id}&mode=fullscreen`);
+
+      const text =
+        `🔔 <b>Через ${REMIND_BEFORE_MIN} минут начнётся:</b>\n\n` +
+        `<b>${esc(expandedEvent.title)}</b>\n` +
+        `📍 ${esc(expandedEvent.location)} · ${fmtTime(expandedEvent.startTime)}` +
+        speakerLine;
+
+      try {
+        await bot.telegram.sendMessage(user.telegramId, text, {
+          parse_mode: "HTML",
+          ...Markup.inlineKeyboard([
+            [Markup.button.url("📅 Открыть в расписании", eventLink)],
+          ]),
+        });
+        console.log(`[reminders] → sent to ${user.telegramId} for "${expandedEvent.title}"`);
+      } catch (err) {
+        console.error(`[reminders] sendMessage to ${user.telegramId} failed:`, err.message);
+        // Allow retry on the next scheduler tick if delivery failed.
+        if (sentMarker?.id) {
+          try {
+            await pb.collection("sent_reminders").delete(sentMarker.id);
+          } catch {}
+        }
+      }
     }
   }
 }
@@ -290,9 +322,10 @@ let remindersIntervalId = null;
 
 function enableReminderScheduler() {
   if (remindersIntervalId) return;
-  console.log(`[reminders] Scheduler active — every 60s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min`);
+  const tzLabel = `UTC${CONF_OFFSET_HOURS >= 0 ? "+" : ""}${CONF_OFFSET_HOURS}`;
+  console.log(`[reminders] Scheduler active — every ${Math.round(SCHEDULER_INTERVAL_MS / 1000)}s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min (${tzLabel})`);
   checkAndSendReminders();
-  remindersIntervalId = setInterval(checkAndSendReminders, 60_000);
+  remindersIntervalId = setInterval(checkAndSendReminders, SCHEDULER_INTERVAL_MS);
 }
 
 async function start() {
