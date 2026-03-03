@@ -21,7 +21,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
   const [plannedIds, setPlannedIds] = useState<Set<string>>(new Set());
   const [scheduleRecords, setScheduleRecords] = useState<Map<string, string>>(new Map()); // eventId → scheduleRecordId
   const [isLoading, setIsLoading] = useState(true);
-  const { hapticImpact, hapticNotification } = useTelegram();
+  const { hapticNotification } = useTelegram();
 
   // Load events and tracks (public, no auth needed)
   useEffect(() => {
@@ -87,7 +87,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       if (isCurrentlyPlanned) {
         hapticNotification("warning");
       } else {
-        hapticImpact("medium");
+        hapticNotification("success");
       }
 
       // Optimistic update

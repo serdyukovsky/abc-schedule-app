@@ -15,7 +15,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: AppHeaderProps) {
   const { theme, isDark } = useTheme();
-  const { hapticImpact } = useTelegram();
+  const { hapticNotification } = useTelegram();
 
   return (
     <View style={[styles.container, { paddingTop: 14 + topInset }]}>
@@ -26,7 +26,7 @@ export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: Ap
           return (
             <Pressable
               key={tab}
-              onPress={() => { hapticImpact("light"); onSelectSegment(i); }}
+              onPress={() => { hapticNotification("success"); onSelectSegment(i); }}
               style={[styles.tab, isActive && [styles.activeTab, { backgroundColor: isDark ? "rgba(99,99,102,0.9)" : "#FFFFFF" }]]}
             >
               <Text style={[styles.tabText, { color: isActive ? theme.text : theme.textSecondary, fontWeight: isActive ? "600" : "400" }]}>

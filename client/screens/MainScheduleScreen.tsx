@@ -26,7 +26,7 @@ const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate(
 export default function MainScheduleScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { hapticImpact } = useTelegram();
+  const { hapticNotification } = useTelegram();
   const { events, tracks: trackRecords, togglePlanned, hasConflict, getPlannedEvents, eventDays } = useEvents();
 
   const trackNames = useMemo(() => ["Все", ...trackRecords.map((t) => t.name)], [trackRecords]);
@@ -93,7 +93,7 @@ export default function MainScheduleScreen() {
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
-    hapticImpact("medium");
+    hapticNotification("success");
     setActiveEventId(event.id);
   }, []);
 

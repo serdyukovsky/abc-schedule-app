@@ -12,7 +12,7 @@ interface FilterChipsProps {
 
 export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
   const { theme } = useTheme();
-  const { hapticImpact } = useTelegram();
+  const { hapticNotification } = useTelegram();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.container}>
       {options.map((option) => {
@@ -20,7 +20,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
         return (
           <Pressable
             key={option}
-            onPress={() => { hapticImpact("light"); onSelect(option); }}
+            onPress={() => { hapticNotification("success"); onSelect(option); }}
             style={[styles.chip, { backgroundColor: isSelected ? theme.link : theme.backgroundSecondary }]}
           >
             <Text style={[styles.chipText, { color: isSelected ? theme.buttonText : theme.textSecondary }]}>
