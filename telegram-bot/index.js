@@ -34,7 +34,10 @@ const pb = new PocketBase(pbUrl);
 pb.autoCancellation(false);
 
 async function pbAuth() {
-  if (!pbAdminEmail || !pbAdminPassword) return false;
+  if (!pbAdminEmail || !pbAdminPassword) {
+    console.error("[pb] Missing PB_ADMIN_EMAIL or PB_ADMIN_PASSWORD");
+    return false;
+  }
   try {
     await pb.collection("_superusers").authWithPassword(pbAdminEmail, pbAdminPassword);
     console.log("[pb] Admin auth OK");
@@ -424,35 +427,43 @@ bot.catch((err) => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-bot.launch({ dropPendingUpdates: true }).then(async () => {
-  const me = await bot.telegram.getMe();
-  console.log(`Telegram bot started: @${me.username} (id=${me.id})`);
-  try {
-    await bot.telegram.setMyCommands([
-      { command: "schedule", description: "Мой план на сегодня" },
-      { command: "help",     description: "Справка" },
-    ]);
-    console.log("Bot commands registered");
-  } catch (err) {
-    console.error("setMyCommands failed:", err.message);
+async function start() {
+  // Ticket verification and schedule access depend on PB auth, so fail fast.
+  const pbOk = await pbAuth();
+  if (!pbOk) {
+    console.error("FATAL: PocketBase auth failed. Check PB_URL, PB_ADMIN_EMAIL, PB_ADMIN_PASSWORD.");
+    process.exit(1);
   }
-}).catch((err) => {
-  console.error("FATAL: Failed to launch bot:", err.message);
-  process.exit(1);
-});
 
-if (pbAdminEmail && pbAdminPassword) {
-  pbAuth().then((ok) => {
-    if (!ok) return;
-    console.log(`[reminders] Scheduler active — every 60s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min`);
-    checkAndSendReminders();
-    setInterval(checkAndSendReminders, 60_000);
-    // Refresh admin token every 12 h to prevent expiry
-    setInterval(pbAuth, 12 * 3_600_000);
-  });
-} else {
-  console.warn("[reminders] PB_ADMIN_EMAIL / PB_ADMIN_PASSWORD not set — scheduler disabled");
+  try {
+    await bot.launch({ dropPendingUpdates: true });
+    const me = await bot.telegram.getMe();
+    console.log(`Telegram bot started: @${me.username} (id=${me.id})`);
+    try {
+      await bot.telegram.setMyCommands([
+        { command: "schedule", description: "Мой план на сегодня" },
+        { command: "help",     description: "Справка" },
+      ]);
+      console.log("Bot commands registered");
+    } catch (err) {
+      console.error("setMyCommands failed:", err.message);
+    }
+  } catch (err) {
+    console.error("FATAL: Failed to launch bot:", err.message);
+    process.exit(1);
+  }
+
+  console.log(`[reminders] Scheduler active — every 60s, window T-${REMIND_BEFORE_MIN}min ±${WINDOW_HALF_MIN}min`);
+  checkAndSendReminders();
+  setInterval(checkAndSendReminders, 60_000);
+  // Refresh admin token every 12 h to prevent expiry.
+  setInterval(async () => {
+    const ok = await pbAuth();
+    if (!ok) console.error("[pb] periodic re-auth failed");
+  }, 12 * 3_600_000);
 }
+
+start();
 
 const shutdown = () => {
   bot.stop("SIGTERM");

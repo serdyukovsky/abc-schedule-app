@@ -12,6 +12,9 @@ TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN npm run bot:start
 Optional env:
 
 - `MINI_APP_DEEP_LINK` (default: `https://t.me/abcschedule_bot/app?startapp=main&mode=fullscreen`)
+- `PB_URL` (default: `http://127.0.0.1:8090`)
+- `PB_ADMIN_EMAIL` (required)
+- `PB_ADMIN_PASSWORD` (required)
 
 ## systemd service example
 
@@ -26,6 +29,9 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/abc-schedule
 Environment="TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN"
+Environment="PB_URL=http://127.0.0.1:8090"
+Environment="PB_ADMIN_EMAIL=admin@example.com"
+Environment="PB_ADMIN_PASSWORD=your_password"
 Environment="MINI_APP_DEEP_LINK=https://t.me/abcschedule_bot/app?startapp=main&mode=fullscreen"
 ExecStart=/usr/bin/npm run bot:start
 Restart=always
@@ -42,4 +48,3 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now abcschedule-bot.service
 sudo systemctl status abcschedule-bot.service --no-pager
 ```
-
