@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
@@ -44,7 +43,6 @@ function toRgba(color: string, alpha: number): string {
 export default function MainScheduleScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const navigate = useNavigate();
   const { events, tracks: trackRecords, togglePlanned, hasConflict, getPlannedEvents, eventDays } = useEvents();
 
   const trackNames = useMemo(() => ["Все", ...trackRecords.map((t) => t.name)], [trackRecords]);
@@ -145,11 +143,6 @@ export default function MainScheduleScreen() {
   const handleCloseEventSheet = useCallback(() => {
     setActiveEventId(null);
   }, []);
-
-  const handleOpenDetailsFromSheet = useCallback((eventId: string) => {
-    setActiveEventId(null);
-    navigate(`/event/${eventId}`);
-  }, [navigate]);
 
   const handleTogglePlanned = useCallback((eventId: string) => {
     const event = events.find((e) => e.id === eventId);
@@ -290,7 +283,6 @@ export default function MainScheduleScreen() {
         event={activeEvent}
         onClose={handleCloseEventSheet}
         onTogglePlanned={handleTogglePlanned}
-        onOpenDetails={handleOpenDetailsFromSheet}
       />
 
       <AppMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />

@@ -11,7 +11,6 @@ interface EventDetailsSheetProps {
   event: Event | null;
   onClose: () => void;
   onTogglePlanned: (eventId: string) => void;
-  onOpenDetails: (eventId: string) => void;
 }
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -22,7 +21,6 @@ export function EventDetailsSheet({
   event,
   onClose,
   onTogglePlanned,
-  onOpenDetails,
 }: EventDetailsSheetProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -124,7 +122,7 @@ export function EventDetailsSheet({
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, { borderTopColor: theme.separator, paddingBottom: Spacing.md + insets.bottom }]}>
+          <View style={[styles.footer, { borderTopColor: theme.separator }]}>
             <Pressable
               onPress={() => onTogglePlanned(event.id)}
               style={[styles.primaryButton, { backgroundColor: event.isPlanned ? theme.backgroundSecondary : theme.link }]}
@@ -133,10 +131,6 @@ export function EventDetailsSheet({
               <Text style={[styles.primaryButtonText, { color: event.isPlanned ? theme.text : theme.buttonText }]}>
                 {event.isPlanned ? "Добавлено" : "Добавить в моё расписание"}
               </Text>
-            </Pressable>
-
-            <Pressable onPress={() => onOpenDetails(event.id)} style={styles.secondaryButton}>
-              <Text style={[styles.secondaryButtonText, { color: theme.textSecondary }]}>Открыть полностью</Text>
             </Pressable>
           </View>
         </div>
@@ -170,12 +164,6 @@ const styles = StyleSheet.create({
   speakerTextWrap: { flex: 1 },
   speakerName: { fontSize: 16, fontWeight: "600" },
   speakerRole: { fontSize: 14, marginTop: 2 },
-  footer: {
-    borderTopWidth: 1,
-    paddingTop: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-  },
   primaryButton: {
     height: 50,
     borderRadius: BorderRadius.full,
@@ -185,6 +173,10 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   primaryButtonText: { fontSize: 16, fontWeight: "600" },
-  secondaryButton: { height: 34, alignItems: "center", justifyContent: "center" },
-  secondaryButtonText: { fontSize: 14, fontWeight: "500" },
+  footer: {
+    borderTopWidth: 1,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
 });
