@@ -20,7 +20,7 @@ const formatMonth = (d: Date) => d.toLocaleDateString("ru-RU", { month: "short" 
 
 export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isSearchActive = false, onMenuPress }: DateSelectorProps) {
   const { theme, isDark } = useTheme();
-  const { hapticSelection, hapticImpact } = useTelegram();
+  const { hapticImpact } = useTelegram();
 
   const bgContainer = isDark ? "rgba(45,45,48,0.92)" : "rgba(245,245,245,0.92)";
   const borderContainer = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
@@ -35,7 +35,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
             return (
               <Pressable
                 key={i}
-                onPress={() => { hapticSelection(); onSelect(opt.date); }}
+                onPress={() => { hapticImpact("light"); onSelect(opt.date); }}
                 style={[styles.dateButton, isSelected && { backgroundColor: isDark ? "rgba(210,7,41,0.45)" : "rgba(210,7,41,0.85)" }]}
                 testID={`date-selector-${i}`}
               >
