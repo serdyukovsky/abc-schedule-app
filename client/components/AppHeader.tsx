@@ -26,7 +26,7 @@ export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: Ap
           return (
             <Pressable
               key={tab}
-              onPress={() => { hapticNotification("success"); onSelectSegment(i); }}
+              onPress={() => { hapticNotification("warning"); onSelectSegment(i); }}
               style={[styles.tab, isActive && [styles.activeTab, { backgroundColor: isDark ? "rgba(99,99,102,0.9)" : "#FFFFFF" }]]}
             >
               <Text style={[styles.tabText, { color: isActive ? theme.text : theme.textSecondary, fontWeight: isActive ? "600" : "400" }]}>

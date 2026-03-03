@@ -35,7 +35,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
             return (
               <Pressable
                 key={i}
-                onPress={() => { hapticNotification("success"); onSelect(opt.date); }}
+                onPress={() => { hapticNotification("warning"); onSelect(opt.date); }}
                 style={[styles.dateButton, isSelected && { backgroundColor: isDark ? "rgba(210,7,41,0.45)" : "rgba(210,7,41,0.85)" }]}
                 testID={`date-selector-${i}`}
               >
@@ -52,7 +52,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
       </View>
 
       <Pressable
-        onPress={() => { hapticNotification("success"); onSearchPress(); }}
+        onPress={() => { hapticNotification("warning"); onSearchPress(); }}
         style={[styles.iconButton, { backgroundColor: bgContainer, borderColor: borderContainer }, isSearchActive && { backgroundColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.85)" }]}
         testID="search-button"
       >
@@ -60,7 +60,7 @@ export function DateSelector({ dates, selectedDate, onSelect, onSearchPress, isS
       </Pressable>
 
       <Pressable
-        onPress={() => { hapticNotification("success"); onMenuPress(); }}
+        onPress={() => { hapticNotification("warning"); onMenuPress(); }}
         style={[styles.iconButton, { backgroundColor: bgContainer, borderColor: borderContainer }]}
       >
         <Feather name="user" size={20} color={iconColor} />

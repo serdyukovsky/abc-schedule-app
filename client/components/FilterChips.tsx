@@ -20,7 +20,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
         return (
           <Pressable
             key={option}
-            onPress={() => { hapticNotification("success"); onSelect(option); }}
+            onPress={() => { hapticNotification("warning"); onSelect(option); }}
             style={[styles.chip, { backgroundColor: isSelected ? theme.link : theme.backgroundSecondary }]}
           >
             <Text style={[styles.chipText, { color: isSelected ? theme.buttonText : theme.textSecondary }]}>

@@ -93,7 +93,7 @@ export default function MainScheduleScreen() {
   }, [plannedEvents]);
 
   const handleEventPress = useCallback((event: Event) => {
-    hapticNotification("success");
+    hapticNotification("warning");
     setActiveEventId(event.id);
   }, []);
 

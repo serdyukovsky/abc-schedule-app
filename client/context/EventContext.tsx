@@ -87,7 +87,7 @@ export function EventProvider({ children }: { children: ReactNode }) {
       if (isCurrentlyPlanned) {
         hapticNotification("warning");
       } else {
-        hapticNotification("success");
+        hapticNotification("warning");
       }
 
       // Optimistic update
