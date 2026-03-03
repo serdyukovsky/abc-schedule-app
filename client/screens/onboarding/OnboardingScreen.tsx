@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from "@/components/primitives";
 import { pb } from "@/lib/pb";
 import type { SpeakerRecord, TrackRecord } from "@/lib/pb-types";
 import { useTelegram } from "@/hooks/useTelegram";
+import { useTheme } from "@/hooks/useTheme";
 import Slide1Tracks from "./slides/Slide1Tracks";
 import Slide2Speakers from "./slides/Slide2Speakers";
 import Slide3Reminder from "./slides/Slide3Reminder";
@@ -22,6 +23,7 @@ export default function OnboardingScreen({ onDone }: Props) {
   const [tracks, setTracks] = useState<TrackRecord[]>([]);
   const insets = useSafeAreaInsets();
   const { hapticSelection } = useTelegram();
+  const { theme, isDark } = useTheme();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickUntil = useRef(0);
 
@@ -96,9 +98,9 @@ export default function OnboardingScreen({ onDone }: Props) {
   const buttonBottom = 24 + insets.bottom;
 
   const currentSlide =
-    current === 0 ? <Slide1Tracks key="s1" tracks={tracks} topInset={insets.top} bottomInset={insets.bottom} /> :
-    current === 1 ? <Slide2Speakers key="s2" speakers={speakers} topInset={insets.top} bottomInset={insets.bottom} /> :
-                   <Slide3Reminder key="s3" topInset={insets.top} bottomInset={insets.bottom} />;
+    current === 0 ? <Slide1Tracks key="s1" tracks={tracks} topInset={insets.top} bottomInset={insets.bottom} isDark={isDark} /> :
+    current === 1 ? <Slide2Speakers key="s2" speakers={speakers} topInset={insets.top} bottomInset={insets.bottom} isDark={isDark} /> :
+                   <Slide3Reminder key="s3" topInset={insets.top} bottomInset={insets.bottom} isDark={isDark} />;
 
   return (
     <div
@@ -130,7 +132,9 @@ export default function OnboardingScreen({ onDone }: Props) {
               width: i === current ? 40 : 14,
               height: 3,
               borderRadius: 2,
-              backgroundColor: i <= current ? "rgba(255,255,255,0.88)" : "rgba(255,255,255,0.25)",
+              backgroundColor: i <= current
+                ? (isDark ? "rgba(255,255,255,0.88)" : "rgba(0,0,0,0.72)")
+                : (isDark ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.2)"),
               transition: "width 0.3s cubic-bezier(0.4,0,0.2,1), background-color 0.2s",
               flexShrink: 0,
             }}
@@ -158,14 +162,15 @@ export default function OnboardingScreen({ onDone }: Props) {
             paddingLeft: 52,
             paddingRight: 52,
             borderRadius: 26,
-            backgroundColor: "#d20729",
-            color: "#fff",
+            backgroundColor: theme.link,
+            color: theme.buttonText,
             fontSize: 17,
             fontWeight: 600,
             fontFamily: "inherit",
             border: "none",
             cursor: "pointer",
             letterSpacing: 0.2,
+            boxShadow: isDark ? "none" : "0 6px 18px rgba(210,7,41,0.28)",
           }}
           onClick={(e) => { e.stopPropagation(); goNext(); }}
           onTouchEnd={(e) => { e.stopPropagation(); }}

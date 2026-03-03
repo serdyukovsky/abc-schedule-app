@@ -55,27 +55,22 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
   if (!telegramId) return e.json(400, { error: "user.id not found in initData" });
 
   let record;
-  try { record = $app.findFirstRecordByFilter("users", "telegramId = {:telegramId}", { telegramId }); } catch (_) {}
+  try {
+    record = $app.findFirstRecordByFilter(
+      "users",
+      "telegramId = {:telegramId} && ticketCode != ''",
+      { telegramId }
+    );
+  } catch (_) {}
 
   if (!record) {
-    const collection = $app.findCollectionByNameOrId("users");
-    record = new Record(collection);
+    return e.json(403, {
+      error: "ticket_required",
+      message: "Access requires ticket verification in Telegram bot",
+    });
+  }
 
-    const syntheticEmail = `tg_${telegramId}@telegram.local`;
-    const randomPassword = $security.randomString(32);
-
-    record.set("email", syntheticEmail);
-    record.set("password", randomPassword);
-    record.set("passwordConfirm", randomPassword);
-    record.set("telegramId", telegramId);
-    record.set("telegramUsername", userData.username || "");
-    record.set("firstName", userData.first_name || "");
-    record.set("lastName", userData.last_name || "");
-    record.set("name", [userData.first_name, userData.last_name].filter(Boolean).join(" "));
-    record.setVerified(true);
-
-    $app.save(record);
-  } else if (userData.username && record.get("telegramUsername") !== userData.username) {
+  if (userData.username && record.get("telegramUsername") !== userData.username) {
     record.set("telegramUsername", userData.username);
     $app.save(record);
   }

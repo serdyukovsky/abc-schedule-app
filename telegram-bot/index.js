@@ -80,6 +80,20 @@ function toPbDate(d) {
   return d.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+function hasTicketCode(user) {
+  return Boolean(String(user?.ticketCode || "").trim());
+}
+
+async function findUsersByTelegramId(telegramId) {
+  return pb.collection("users").getFullList({
+    filter: `telegramId = '${telegramId}'`,
+  });
+}
+
+function pickLinkedUser(users) {
+  return users.find((u) => hasTicketCode(u)) || null;
+}
+
 // ─── Reminder scheduler ───────────────────────────────────────────────────────
 
 async function checkAndSendReminders() {
@@ -148,21 +162,20 @@ async function handleScheduleCommand(ctx) {
 
   let users;
   try {
-    users = await pb.collection("users").getFullList({
-      filter: `telegramId = '${telegramId}'`,
-    });
+    users = await findUsersByTelegramId(telegramId);
   } catch {
     return ctx.reply("Не удалось получить данные. Попробуй позже.");
   }
 
-  if (!users.length) {
+  const user = pickLinkedUser(users);
+  if (!user) {
     return ctx.reply(
-      "Ты ещё не зарегистрировался.\nОткрой приложение или введи /start, чтобы начать 👇",
-      openKeyboard
+      "Доступ в приложение открывается после проверки билета.\n\n" +
+      "Нажми /start и введи номер билета."
     );
   }
 
-  const userId   = users[0].id;
+  const userId = user.id;
   // Use conference-local date for day boundaries (events stored as local-time-in-UTC)
   const nowConf  = new Date(Date.now() + CONF_OFFSET_MS);
   const dayStart = new Date(Date.UTC(nowConf.getUTCFullYear(), nowConf.getUTCMonth(), nowConf.getUTCDate()));
@@ -240,8 +253,35 @@ async function handleTicketInput(ctx) {
     );
   }
 
+  // Handle legacy auto-created records with telegramId but without ticketCode.
+  // If current Telegram account is already linked to another valid ticket, deny reassignment.
+  let sameTelegramUsers = [];
+  try {
+    sameTelegramUsers = await findUsersByTelegramId(telegramId);
+  } catch (err) {
+    console.error("[ticket] same telegram lookup failed:", err.message);
+    return ctx.reply("Не удалось проверить привязку. Попробуй позже.");
+  }
+
+  for (const existing of sameTelegramUsers) {
+    if (existing.id === user.id) continue;
+    if (hasTicketCode(existing)) {
+      return ctx.reply(
+        "Этот Telegram-аккаунт уже привязан к другому билету.\n" +
+        "Если это ошибка — обратись к организаторам."
+      );
+    }
+  }
+
   // Link this Telegram account to the user record
   try {
+    for (const existing of sameTelegramUsers) {
+      if (existing.id === user.id) continue;
+      await pb.collection("users").update(existing.id, {
+        telegramId: "",
+        telegramUsername: "",
+      });
+    }
     await pb.collection("users").update(user.id, {
       telegramId:       telegramId,
       telegramUsername: ctx.from.username || "",
@@ -289,20 +329,19 @@ bot.action("onboarding_start", async (ctx) => {
 
   const telegramId = String(ctx.from.id);
 
+  if (!await ensureAuth(ctx)) return;
+
   // Check if user already registered (PocketBase call is here, not in /start)
-  if (await ensureAuth(null)) {
-    try {
-      const users = await pb.collection("users").getFullList({
-        filter: `telegramId = '${telegramId}'`,
-      });
-      if (users.length) {
-        return ctx.reply(
-          "Ты уже в системе! ✅\n\nЖми кнопку, чтобы открыть расписание:",
-          openKeyboard
-        );
-      }
-    } catch {}
-  }
+  try {
+    const users = await findUsersByTelegramId(telegramId);
+    const user = pickLinkedUser(users);
+    if (user) {
+      return ctx.reply(
+        "Ты уже в системе! ✅\n\nЖми кнопку, чтобы открыть расписание:",
+        openKeyboard
+      );
+    }
+  } catch {}
 
   // New user — Message 2: Ask for ticket number
   userState.set(telegramId, { step: "awaiting_ticket" });
@@ -317,27 +356,65 @@ bot.action("onboarding_start", async (ctx) => {
 bot.command("schedule", handleScheduleCommand);
 
 bot.command("help", async (ctx) => {
-  await ctx.reply(
+  const telegramId = String(ctx.from?.id || "");
+  const baseText =
     "<b>ABC Forum — расписание кемпа</b>\n\n" +
     "/schedule — мой план на сегодня\n" +
-    "/start — главное меню\n\n" +
-    "Всё расписание — в приложении 👇",
-    { parse_mode: "HTML", ...openKeyboard }
+    "/start — проверка билета и доступ\n\n";
+
+  if (!telegramId) {
+    return ctx.reply(
+      `${baseText}Сначала введи номер билета через /start.`,
+      { parse_mode: "HTML" }
+    );
+  }
+
+  if (!await ensureAuth(ctx)) return;
+
+  try {
+    const users = await findUsersByTelegramId(telegramId);
+    const user = pickLinkedUser(users);
+    if (user) {
+      return ctx.reply(
+        `${baseText}Всё расписание — в приложении 👇`,
+        { parse_mode: "HTML", ...openKeyboard }
+      );
+    }
+  } catch (_) {}
+
+  await ctx.reply(
+    `${baseText}Сначала введи номер билета через /start.`,
+    { parse_mode: "HTML" }
   );
 });
 
 // ─── Text: ticket input or fallback ──────────────────────────────────────────
 
 bot.on("text", async (ctx) => {
-  const state = userState.get(String(ctx.from?.id));
+  const telegramId = String(ctx.from?.id || "");
+  const state = userState.get(telegramId);
 
   if (state?.step === "awaiting_ticket") {
     return handleTicketInput(ctx);
   }
 
+  if (!telegramId || !await ensureAuth(null)) {
+    return ctx.reply("Сервис временно недоступен. Попробуйте позже.");
+  }
+
+  try {
+    const users = await findUsersByTelegramId(telegramId);
+    const user = pickLinkedUser(users);
+    if (user) {
+      return ctx.reply(
+        "Используй кнопку ниже, чтобы открыть расписание 👇",
+        openKeyboard
+      );
+    }
+  } catch (_) {}
+
   await ctx.reply(
-    "Используй кнопку ниже, чтобы открыть расписание 👇",
-    openKeyboard
+    "Сначала нажми /start и введи номер билета, чтобы получить доступ к приложению."
   );
 });
 

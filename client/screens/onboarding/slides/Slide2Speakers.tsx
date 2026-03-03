@@ -6,6 +6,7 @@ interface Props {
   speakers: SpeakerRecord[];
   topInset: number;
   bottomInset: number;
+  isDark: boolean;
 }
 
 const TOP_SECTION_PADDING = 62;
@@ -44,6 +45,26 @@ const INTRO_DROP_DURATION_MS = 620;
 const INTRO_STAGGER_MS = 90;
 const INTRO_TOTAL_MS = INTRO_DROP_DURATION_MS + INTRO_STAGGER_MS * (STACK_LAYOUTS.length - 1) + 120;
 
+type SlidePalette = {
+  background: string;
+  ambient: string;
+  overline: string;
+  cardBg: string;
+  cardBorder: string;
+  cardShadowFront: string;
+  cardShadowBack: string;
+  badgeBgPlanned: string;
+  badgeTextPlanned: string;
+  badgeBg: string;
+  badgeText: string;
+  title: string;
+  meta: string;
+  plusStroke: string;
+  avatarBorder: string;
+  bottomTitle: string;
+  bottomDesc: string;
+};
+
 function buildPhotoUrl(s: SpeakerRecord): string | undefined {
   if (!s.photo || !s.collectionId) return undefined;
   return `${pb.baseURL}/api/files/${s.collectionId}/${s.id}/${s.photo}`;
@@ -53,7 +74,7 @@ function getInitials(name: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-function Avatar({ speaker, size, idx }: { speaker: SpeakerRecord; size: number; idx: number }) {
+function Avatar({ speaker, size, idx, borderColor }: { speaker: SpeakerRecord; size: number; idx: number; borderColor: string }) {
   const url = buildPhotoUrl(speaker);
   const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
   if (url) {
@@ -61,7 +82,7 @@ function Avatar({ speaker, size, idx }: { speaker: SpeakerRecord; size: number; 
       <img
         src={url}
         alt={speaker.name}
-        style={{ width: size, height: size, borderRadius: size / 2, objectFit: "cover", border: "2px solid rgba(255,255,255,0.12)", flexShrink: 0 }}
+        style={{ width: size, height: size, borderRadius: size / 2, objectFit: "cover", border: `2px solid ${borderColor}`, flexShrink: 0 }}
       />
     );
   }
@@ -70,7 +91,7 @@ function Avatar({ speaker, size, idx }: { speaker: SpeakerRecord; size: number; 
       style={{
         width: size, height: size, borderRadius: size / 2, backgroundColor: color,
         display: "flex", alignItems: "center", justifyContent: "center",
-        border: "2px solid rgba(255,255,255,0.12)", flexShrink: 0,
+        border: `2px solid ${borderColor}`, flexShrink: 0,
       }}
     >
       <span style={{ color: "#fff", fontSize: Math.round(size * 0.36), fontWeight: 700 }}>{getInitials(speaker.name)}</span>
@@ -78,7 +99,7 @@ function Avatar({ speaker, size, idx }: { speaker: SpeakerRecord; size: number; 
   );
 }
 
-function CarouselCard({ speaker, idx }: { speaker: SpeakerRecord; idx: number }) {
+function CarouselCard({ speaker, idx, borderColor }: { speaker: SpeakerRecord; idx: number; borderColor: string }) {
   return (
     <div
       style={{
@@ -89,7 +110,7 @@ function CarouselCard({ speaker, idx }: { speaker: SpeakerRecord; idx: number })
         width: 68,
       }}
     >
-      <Avatar speaker={speaker} size={66} idx={idx} />
+      <Avatar speaker={speaker} size={66} idx={idx} borderColor={borderColor} />
     </div>
   );
 }
@@ -108,6 +129,7 @@ function MockEventCard({
   transitionsEnabled,
   introOrder,
   onIntroAnimationEnd,
+  palette,
 }: {
   track: string;
   title: string;
@@ -122,6 +144,7 @@ function MockEventCard({
   transitionsEnabled: boolean;
   introOrder: number;
   onIntroAnimationEnd?: () => void;
+  palette: SlidePalette;
 }) {
   const targetTransform = isLeaving
     ? `translate(${leavingLayout.x}px, ${leavingLayout.y}px) scale(${leavingLayout.scale})`
@@ -145,14 +168,14 @@ function MockEventCard({
         top: 0,
         transform: targetTransform,
         transformOrigin: "center top",
-        background: "#151a2b",
+        background: palette.cardBg,
         borderRadius: 14,
-        border: "1px solid #2b324a",
+        border: `1px solid ${palette.cardBorder}`,
         borderLeft: "3px solid #d20729",
         padding: "12px 14px",
         minHeight: 106,
         overflow: "hidden",
-        boxShadow: isFront ? "0 14px 30px rgba(0,0,0,0.34)" : "0 10px 22px rgba(0,0,0,0.28)",
+        boxShadow: isFront ? palette.cardShadowFront : palette.cardShadowBack,
         zIndex: isLeaving ? 7 : layout.zIndex,
         opacity: layout.opacity,
         transition: transitionsEnabled
@@ -168,8 +191,8 @@ function MockEventCard({
       <div style={{ marginBottom: 7 }}>
         <span
           style={{
-            background: planned ? "rgba(210,7,41,0.2)" : "rgba(255,255,255,0.1)",
-            color: planned ? "#ff6b83" : "rgba(255,255,255,0.58)",
+            background: planned ? palette.badgeBgPlanned : palette.badgeBg,
+            color: planned ? palette.badgeTextPlanned : palette.badgeText,
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: 0.6,
@@ -184,7 +207,7 @@ function MockEventCard({
 
       <div
         style={{
-          color: "#fff",
+          color: palette.title,
           fontSize: 14,
           fontWeight: 600,
           lineHeight: "19px",
@@ -199,7 +222,7 @@ function MockEventCard({
           display: "flex",
           alignItems: "center",
           gap: 10,
-          color: "rgba(255,255,255,0.42)",
+          color: palette.meta,
           fontSize: 11,
         }}
       >
@@ -220,7 +243,7 @@ function MockEventCard({
             </svg>
           ) : (
             <span style={{ display: "flex", alignItems: "center", animation: isFront ? "plusButtonPulse 1.8s ease-in-out infinite" : undefined }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.42)" strokeWidth="2.2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={palette.plusStroke} strokeWidth="2.2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="16"/>
                 <line x1="8" y1="12" x2="16" y2="12"/>
@@ -233,7 +256,7 @@ function MockEventCard({
   );
 }
 
-export default function Slide2Speakers({ speakers, topInset, bottomInset }: Props) {
+export default function Slide2Speakers({ speakers, topInset, bottomInset, isDark }: Props) {
   const list = speakers.length >= 3 ? speakers : PLACEHOLDER_SPEAKERS;
   const [activeCard, setActiveCard] = useState(0);
   const [leavingCardId, setLeavingCardId] = useState<string | null>(null);
@@ -241,6 +264,45 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
   const [transitionsEnabled, setTransitionsEnabled] = useState(false);
   const topPadding = Math.max(TOP_SECTION_PADDING, topInset + 10);
   const bottomTextPadding = Math.max(196, 162 + bottomInset);
+  const palette: SlidePalette = isDark
+    ? {
+        background: "linear-gradient(160deg, #0d0d1a 0%, #0f1325 100%)",
+        ambient: "radial-gradient(ellipse, rgba(37,150,190,0.1) 0%, transparent 70%)",
+        overline: "rgba(255,255,255,0.28)",
+        cardBg: "#151a2b",
+        cardBorder: "#2b324a",
+        cardShadowFront: "0 14px 30px rgba(0,0,0,0.34)",
+        cardShadowBack: "0 10px 22px rgba(0,0,0,0.28)",
+        badgeBgPlanned: "rgba(210,7,41,0.2)",
+        badgeTextPlanned: "#ff6b83",
+        badgeBg: "rgba(255,255,255,0.1)",
+        badgeText: "rgba(255,255,255,0.58)",
+        title: "#fff",
+        meta: "rgba(255,255,255,0.42)",
+        plusStroke: "rgba(255,255,255,0.42)",
+        avatarBorder: "rgba(255,255,255,0.12)",
+        bottomTitle: "#fff",
+        bottomDesc: "rgba(255,255,255,0.55)",
+      }
+    : {
+        background: "linear-gradient(162deg, #f8fbff 0%, #edf3ff 100%)",
+        ambient: "radial-gradient(ellipse, rgba(37,150,190,0.12) 0%, transparent 72%)",
+        overline: "rgba(15,23,42,0.5)",
+        cardBg: "#ffffff",
+        cardBorder: "rgba(15,23,42,0.12)",
+        cardShadowFront: "0 12px 24px rgba(14,23,42,0.13)",
+        cardShadowBack: "0 8px 16px rgba(14,23,42,0.09)",
+        badgeBgPlanned: "rgba(210,7,41,0.14)",
+        badgeTextPlanned: "#c30a28",
+        badgeBg: "rgba(15,23,42,0.08)",
+        badgeText: "rgba(15,23,42,0.56)",
+        title: "#101828",
+        meta: "rgba(15,23,42,0.5)",
+        plusStroke: "rgba(15,23,42,0.45)",
+        avatarBorder: "rgba(15,23,42,0.14)",
+        bottomTitle: "#101828",
+        bottomDesc: "rgba(15,23,42,0.62)",
+      };
   const activeRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const introResolvedRef = useRef(false);
@@ -309,7 +371,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
     <div
       style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(160deg, #0d0d1a 0%, #0f1325 100%)",
+        background: palette.background,
         display: "flex", flexDirection: "column",
         overflow: "hidden",
       }}
@@ -319,7 +381,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
         style={{
           position: "absolute", top: "20%", left: "20%",
           width: 300, height: 200,
-          background: "radial-gradient(ellipse, rgba(37,150,190,0.1) 0%, transparent 70%)",
+          background: palette.ambient,
           pointerEvents: "none",
         }}
       />
@@ -329,7 +391,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
         <div
           style={{
             fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
-            color: "rgba(255,255,255,0.28)", textTransform: "uppercase" as const,
+            color: palette.overline, textTransform: "uppercase" as const,
             paddingLeft: CONTENT_HORIZONTAL_PADDING, marginBottom: 12,
             position: "relative",
             zIndex: 20,
@@ -350,7 +412,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
               }}
             >
               {row1.map((s, i) => (
-                <CarouselCard key={i} speaker={s} idx={i % list.length} />
+                <CarouselCard key={i} speaker={s} idx={i % list.length} borderColor={palette.avatarBorder} />
               ))}
             </div>
           </div>
@@ -365,7 +427,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
               }}
             >
               {row2.map((s, i) => (
-                <CarouselCard key={i} speaker={s} idx={(i + 3) % list.length} />
+                <CarouselCard key={i} speaker={s} idx={(i + 3) % list.length} borderColor={palette.avatarBorder} />
               ))}
             </div>
           </div>
@@ -406,6 +468,7 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
                 transitionsEnabled={transitionsEnabled}
                 introOrder={introOrder}
                 onIntroAnimationEnd={isLastIntroCard ? finishIntro : undefined}
+                palette={palette}
               />
             );
           })}
@@ -423,10 +486,10 @@ export default function Slide2Speakers({ speakers, topInset, bottomInset }: Prop
           pointerEvents: "none",
         }}
       >
-        <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: "34px", marginBottom: 10 }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: palette.bottomTitle, lineHeight: "34px", marginBottom: 10 }}>
           Ваш личный<br />план
         </div>
-        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: "22px" }}>
+        <div style={{ fontSize: 15, color: palette.bottomDesc, lineHeight: "22px" }}>
           Добавляйте интересные доклады одним касанием. Приложение покажет конфликты
         </div>
       </div>

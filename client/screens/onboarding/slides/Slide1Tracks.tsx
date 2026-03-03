@@ -5,6 +5,7 @@ interface Props {
   tracks: TrackRecord[];
   topInset: number;
   bottomInset: number;
+  isDark: boolean;
 }
 
 const TOP_SECTION_PADDING = 62;
@@ -28,12 +29,55 @@ const PREVIEW_TEMPLATES = [
   { title: "Сильные связи для новых проектов", speaker: "Елена Морозова", location: "Зал F" },
 ];
 
-export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
+export default function Slide1Tracks({ tracks, topInset, bottomInset, isDark }: Props) {
   const list = tracks.length > 0 ? tracks : PLACEHOLDER_TRACKS;
   const displayTracks = list.slice(0, 7);
   const [activeTrackIndex, setActiveTrackIndex] = useState(0);
   const topPadding = Math.max(TOP_SECTION_PADDING, topInset + 10);
   const bottomTextPadding = Math.max(160, 126 + bottomInset);
+  const palette = isDark
+    ? {
+        background: "#090910",
+        ambient: "radial-gradient(ellipse, rgba(210,7,41,0.14) 0%, transparent 68%)",
+        overline: "rgba(255,255,255,0.28)",
+        chipText: "rgba(255,255,255,0.6)",
+        chipBg: "rgba(255,255,255,0.07)",
+        chipBorder: "rgba(255,255,255,0.1)",
+        selectedBg: "#d20729",
+        selectedBorder: "rgba(210,7,41,0.6)",
+        previewBg: "rgba(255,255,255,0.05)",
+        previewBorder: "rgba(255,255,255,0.08)",
+        badgeBg: "rgba(210,7,41,0.18)",
+        badgeText: "#ff5570",
+        title: "#fff",
+        meta: "rgba(255,255,255,0.45)",
+        location: "rgba(255,255,255,0.3)",
+        avatarBg: "rgba(255,255,255,0.15)",
+        avatarText: "rgba(255,255,255,0.5)",
+        bottomTitle: "#fff",
+        bottomDesc: "rgba(255,255,255,0.55)",
+      }
+    : {
+        background: "linear-gradient(170deg, #f7f9ff 0%, #edf2ff 100%)",
+        ambient: "radial-gradient(ellipse, rgba(210,7,41,0.1) 0%, transparent 70%)",
+        overline: "rgba(15,23,42,0.5)",
+        chipText: "rgba(15,23,42,0.74)",
+        chipBg: "rgba(255,255,255,0.74)",
+        chipBorder: "rgba(15,23,42,0.12)",
+        selectedBg: "#d20729",
+        selectedBorder: "rgba(210,7,41,0.56)",
+        previewBg: "rgba(255,255,255,0.86)",
+        previewBorder: "rgba(15,23,42,0.12)",
+        badgeBg: "rgba(210,7,41,0.14)",
+        badgeText: "#c30a28",
+        title: "#101828",
+        meta: "rgba(15,23,42,0.64)",
+        location: "rgba(15,23,42,0.54)",
+        avatarBg: "rgba(15,23,42,0.12)",
+        avatarText: "rgba(15,23,42,0.55)",
+        bottomTitle: "#101828",
+        bottomDesc: "rgba(15,23,42,0.62)",
+      };
 
   useEffect(() => {
     if (displayTracks.length <= 1) return;
@@ -59,7 +103,7 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
       style={{
         position: "absolute",
         inset: 0,
-        background: "#090910",
+        background: palette.background,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -74,7 +118,7 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
           transform: "translateX(-50%)",
           width: 340,
           height: 220,
-          background: "radial-gradient(ellipse, rgba(210,7,41,0.14) 0%, transparent 68%)",
+          background: palette.ambient,
           pointerEvents: "none",
         }}
       />
@@ -97,7 +141,7 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: 1.5,
-            color: "rgba(255,255,255,0.28)",
+            color: palette.overline,
             textTransform: "uppercase",
             marginBottom: 12,
             animation: "fadeInUp 0.4s ease both",
@@ -118,9 +162,9 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
                   borderRadius: 999,
                   fontSize: 14,
                   fontWeight: isSelected ? 700 : 500,
-                  color: isSelected ? "#fff" : "rgba(255,255,255,0.6)",
-                  backgroundColor: isSelected ? "#d20729" : "rgba(255,255,255,0.07)",
-                  border: `1px solid ${isSelected ? "rgba(210,7,41,0.6)" : "rgba(255,255,255,0.1)"}`,
+                  color: isSelected ? "#fff" : palette.chipText,
+                  backgroundColor: isSelected ? palette.selectedBg : palette.chipBg,
+                  border: `1px solid ${isSelected ? palette.selectedBorder : palette.chipBorder}`,
                   transform: isSelected ? "translateY(-1px)" : "translateY(0)",
                   animation: isSelected
                     ? "fadeInUp 0.45s ease both, chipGlow 2.5s ease-in-out infinite"
@@ -141,8 +185,9 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
           key={`preview-${activeTrack?.id ?? activeTrackIndex}`}
           style={{
             marginTop: 28,
-            background: "rgba(255,255,255,0.05)",
+            background: palette.previewBg,
             borderRadius: 12,
+            border: `1px solid ${palette.previewBorder}`,
             borderLeft: "3px solid #d20729",
             padding: "13px 14px",
             animation: "slideInFromRight 0.42s ease both",
@@ -151,8 +196,8 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
           <div style={{ marginBottom: 7 }}>
             <span
               style={{
-                background: "rgba(210,7,41,0.18)",
-                color: "#ff5570",
+                background: palette.badgeBg,
+                color: palette.badgeText,
                 fontSize: 9,
                 fontWeight: 700,
                 letterSpacing: 0.8,
@@ -164,7 +209,7 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
               {activeTrack?.name ?? "Трек"}
             </span>
           </div>
-          <div style={{ color: "#fff", fontSize: 14, fontWeight: 600, lineHeight: "19px", marginBottom: 8 }}>
+          <div style={{ color: palette.title, fontSize: 14, fontWeight: 600, lineHeight: "19px", marginBottom: 8 }}>
             {preview.title}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -173,7 +218,7 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                color: "rgba(255,255,255,0.45)",
+                color: palette.meta,
                 fontSize: 12,
               }}
             >
@@ -183,20 +228,20 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
                   width: 20,
                   height: 20,
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.15)",
+                  background: palette.avatarBg,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: 8,
                   fontWeight: 700,
-                  color: "rgba(255,255,255,0.5)",
+                  color: palette.avatarText,
                 }}
               >
                 АП
               </div>
               {preview.speaker}
             </div>
-            <div style={{ color: "rgba(255,255,255,0.3)", fontSize: 11, marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
+            <div style={{ color: palette.location, fontSize: 11, marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               {preview.location}
             </div>
@@ -213,10 +258,10 @@ export default function Slide1Tracks({ tracks, topInset, bottomInset }: Props) {
           pointerEvents: "none",
         }}
       >
-        <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", lineHeight: "34px", marginBottom: 10 }}>
+        <div style={{ fontSize: 28, fontWeight: 700, color: palette.bottomTitle, lineHeight: "34px", marginBottom: 10 }}>
           Все треки<br />под рукой
         </div>
-        <div style={{ fontSize: 15, color: "rgba(255,255,255,0.55)", lineHeight: "22px" }}>
+        <div style={{ fontSize: 15, color: palette.bottomDesc, lineHeight: "22px" }}>
           Выберите интересный трек и стройте программу дня под свои цели
         </div>
       </div>

@@ -32,10 +32,10 @@ function TelegramAuthError() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.backgroundRoot, padding: 24 }}>
       <Text style={{ fontSize: 18, fontWeight: "600", color: theme.text, marginBottom: 8, textAlign: "center" }}>
-        Не удалось войти
+        Доступ не подтверждён
       </Text>
       <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginBottom: 20 }}>
-        Ошибка авторизации через Telegram. Попробуйте перезапустить приложение.
+        Сначала откройте бота, нажмите /start и введите номер билета. После привязки билета вернитесь в приложение.
       </Text>
       <Pressable
         onPress={() => window.location.reload()}
