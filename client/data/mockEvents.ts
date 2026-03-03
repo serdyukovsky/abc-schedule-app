@@ -13,11 +13,11 @@ export interface Event {
   isPlanned: boolean;
 }
 
-const day1 = new Date(2026, 3, 20); // 20 апреля
-const day2 = new Date(2026, 3, 21); // 21 апреля
-const day3 = new Date(2026, 3, 22); // 22 апреля
-const day4 = new Date(2026, 3, 23); // 23 апреля
-const day5 = new Date(2026, 3, 24); // 24 апреля
+const day1 = new Date(2026, 2, 3); // 3 марта
+const day2 = new Date(2026, 2, 4); // 4 марта
+const day3 = new Date(2026, 2, 5); // 5 марта
+const day4 = new Date(2026, 2, 6); // 6 марта
+const day5 = new Date(2026, 2, 7); // 7 марта
 
 function createDate(baseDate: Date, hours: number, minutes: number): Date {
   const date = new Date(baseDate);
@@ -26,7 +26,7 @@ function createDate(baseDate: Date, hours: number, minutes: number): Date {
 }
 
 export const mockEvents: Event[] = [
-  // День 1 — 20 апреля
+  // День 1 — 3 марта
   {
     id: "1",
     title: "Открывающий ключевой доклад: будущее бизнеса на Алтае",
@@ -133,7 +133,7 @@ export const mockEvents: Event[] = [
     topics: ["Гендерное равенство", "Карьерный рост", "Баланс работа-жизнь"],
     isPlanned: false,
   },
-  // День 2 — 21 апреля
+  // День 2 — 4 марта
   {
     id: "9",
     title: "Ключевой доклад дня 2: инновационные экосистемы",
@@ -225,7 +225,7 @@ export const mockEvents: Event[] = [
     topics: [],
     isPlanned: false,
   },
-  // День 3 — 22 апреля
+  // День 3 — 5 марта
   {
     id: "16",
     title: "Ключевой доклад дня 3: выход на глобальные рынки",
@@ -291,7 +291,7 @@ export const mockEvents: Event[] = [
     topics: [],
     isPlanned: false,
   },
-  // День 4 — 23 апреля
+  // День 4 — 6 марта
   {
     id: "21",
     title: "Ключевой доклад дня 4: технологии будущего",
@@ -357,7 +357,7 @@ export const mockEvents: Event[] = [
     topics: [],
     isPlanned: false,
   },
-  // День 5 — 24 апреля
+  // День 5 — 7 марта
   {
     id: "26",
     title: "Финальный ключевой доклад: план действий 2026",
@@ -427,11 +427,11 @@ export const mockEvents: Event[] = [
 ];
 
 export const eventDays = [
-  { date: day1, label: "20 апр", shortLabel: "20" },
-  { date: day2, label: "21 апр", shortLabel: "21" },
-  { date: day3, label: "22 апр", shortLabel: "22" },
-  { date: day4, label: "23 апр", shortLabel: "23" },
-  { date: day5, label: "24 апр", shortLabel: "24" },
+  { date: day1, label: "3 мар", shortLabel: "3" },
+  { date: day2, label: "4 мар", shortLabel: "4" },
+  { date: day3, label: "5 мар", shortLabel: "5" },
+  { date: day4, label: "6 мар", shortLabel: "6" },
+  { date: day5, label: "7 мар", shortLabel: "7" },
 ];
 
 export const tracks = [

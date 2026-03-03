@@ -172,11 +172,11 @@ function createDate(year, month, day, hours, minutes) {
   return new Date(year, month, day, hours, minutes, 0, 0).toISOString().replace("T", " ");
 }
 
-const day1 = [2026, 3, 20];
-const day2 = [2026, 3, 21];
-const day3 = [2026, 3, 22];
-const day4 = [2026, 3, 23];
-const day5 = [2026, 3, 24];
+const day1 = [2026, 2, 3];
+const day2 = [2026, 2, 4];
+const day3 = [2026, 2, 5];
+const day4 = [2026, 2, 6];
+const day5 = [2026, 2, 7];
 
 const eventsData = [
   // Day 1
