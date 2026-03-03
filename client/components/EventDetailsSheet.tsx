@@ -9,16 +9,25 @@ import { Event } from "@/lib/pb-types";
 interface EventDetailsSheetProps {
   visible: boolean;
   event: Event | null;
+  conflictingEvent?: Event | null;
   onClose: () => void;
   onTogglePlanned: (eventId: string) => void;
 }
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "long", month: "long", day: "numeric" });
+const getDuration = (event: Event) => {
+  const mins = Math.round((event.endTime.getTime() - event.startTime.getTime()) / 60000);
+  if (mins < 60) return `${mins} мин`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}ч ${m}мин` : `${h}ч`;
+};
 
 export function EventDetailsSheet({
   visible,
   event,
+  conflictingEvent,
   onClose,
   onTogglePlanned,
 }: EventDetailsSheetProps) {
@@ -74,23 +83,6 @@ export function EventDetailsSheet({
               <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{event.subtitle}</Text>
             ) : null}
 
-            <View style={styles.metaList}>
-              <View style={styles.metaRow}>
-                <Feather name="clock" size={16} color={theme.textSecondary} />
-                <Text style={[styles.metaText, { color: theme.text }]}>
-                  {formatTime(event.startTime)} - {formatTime(event.endTime)}
-                </Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Feather name="calendar" size={16} color={theme.textSecondary} />
-                <Text style={[styles.metaText, { color: theme.text }]}>{formatDate(event.startTime)}</Text>
-              </View>
-              <View style={styles.metaRow}>
-                <Feather name="map-pin" size={16} color={theme.textSecondary} />
-                <Text style={[styles.metaText, { color: theme.text }]}>{event.location}</Text>
-              </View>
-            </View>
-
             {event.speakerName ? (
               <View style={styles.speakerRow}>
                 {event.speakerPhoto ? (
@@ -113,16 +105,64 @@ export function EventDetailsSheet({
               </View>
             ) : null}
 
+            <View style={[styles.infoSection, { borderColor: theme.separator }]}>
+              <View style={styles.metaRow}>
+                <Feather name="calendar" size={16} color={theme.textSecondary} />
+                <Text style={[styles.metaText, { color: theme.text }]}>{formatDate(event.startTime)}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Feather name="clock" size={16} color={theme.textSecondary} />
+                <Text style={[styles.metaText, { color: theme.text }]}>
+                  {formatTime(event.startTime)} - {formatTime(event.endTime)} ({getDuration(event)})
+                </Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Feather name="map-pin" size={16} color={theme.textSecondary} />
+                <Text style={[styles.metaText, { color: theme.text }]}>{event.location}</Text>
+              </View>
+            </View>
+
+            {conflictingEvent ? (
+              <View style={[styles.conflictBanner, { backgroundColor: `${theme.conflict}15` }]}>
+                <Feather name="alert-circle" size={16} color={theme.conflict} />
+                <Text style={[styles.conflictText, { color: theme.conflict }]}>
+                  Конфликт с «{conflictingEvent.title}»
+                </Text>
+              </View>
+            ) : null}
+
             {event.description ? (
-              <div
-                className="event-description"
-                style={{ color: theme.text, fontSize: 15, lineHeight: "22px" }}
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
-              />
+              <View style={styles.descriptionSection}>
+                <div
+                  className="event-description"
+                  style={{ color: theme.text, fontSize: 15, lineHeight: "22px" }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(event.description) }}
+                />
+              </View>
+            ) : null}
+
+            {event.topics.length > 0 ? (
+              <View style={styles.topicsSection}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>Что вы получите</Text>
+                {event.topics.map((topic, i) => (
+                  <View key={i} style={styles.topicRow}>
+                    <View style={[styles.bullet, { backgroundColor: theme.link }]} />
+                    <Text style={[styles.topicText, { color: theme.text }]}>{topic}</Text>
+                  </View>
+                ))}
+              </View>
             ) : null}
           </ScrollView>
 
-          <View style={[styles.footer, { borderTopColor: theme.separator }]}>
+          <View
+            style={[
+              styles.footer,
+              {
+                borderTopColor: theme.separator,
+                paddingBottom: Math.max(Spacing.md, insets.bottom),
+              },
+            ]}
+          >
             <Pressable
               onPress={() => onTogglePlanned(event.id)}
               style={[styles.primaryButton, { backgroundColor: event.isPlanned ? theme.backgroundSecondary : theme.link }]}
@@ -156,14 +196,27 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.lg },
   title: { fontSize: 28, lineHeight: 34, fontWeight: "600" },
   subtitle: { fontSize: 16, lineHeight: 22, marginTop: Spacing.sm },
-  metaList: { marginTop: Spacing.lg, gap: Spacing.sm },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
-  metaText: { fontSize: 15 },
-  speakerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md, marginTop: Spacing.xl, marginBottom: Spacing.lg },
+  speakerRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md, marginTop: Spacing.lg, marginBottom: Spacing.lg },
   speakerAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   speakerTextWrap: { flex: 1 },
   speakerName: { fontSize: 16, fontWeight: "600" },
   speakerRole: { fontSize: 14, marginTop: 2 },
+  infoSection: {
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    gap: Spacing.sm,
+  },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm },
+  metaText: { fontSize: 15 },
+  conflictBanner: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, padding: Spacing.md, borderRadius: BorderRadius.sm, marginTop: Spacing.lg },
+  conflictText: { fontSize: 14, fontWeight: "500", flex: 1 },
+  descriptionSection: { marginTop: Spacing.xl },
+  topicsSection: { marginTop: Spacing.xl },
+  sectionTitle: { fontSize: 17, fontWeight: "600", marginBottom: Spacing.md },
+  topicRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: Spacing.sm },
+  bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 7, marginRight: Spacing.md },
+  topicText: { fontSize: 15, lineHeight: 22, flex: 1 },
   primaryButton: {
     height: 50,
     borderRadius: BorderRadius.full,
@@ -176,7 +229,6 @@ const styles = StyleSheet.create({
   footer: {
     borderTopWidth: 1,
     paddingTop: Spacing.md,
-    paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.lg,
   },
 });

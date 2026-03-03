@@ -75,6 +75,10 @@ export default function MainScheduleScreen() {
     () => (activeEventId ? events.find((event) => event.id === activeEventId) ?? null : null),
     [activeEventId, events]
   );
+  const activeEventConflict = useMemo(
+    () => (activeEvent ? hasConflict(activeEvent) : null),
+    [activeEvent, hasConflict]
+  );
 
   const matchesSearch = (event: Event, q: string) => {
     if (!q.trim()) return true;
@@ -281,6 +285,7 @@ export default function MainScheduleScreen() {
       <EventDetailsSheet
         visible={Boolean(activeEvent)}
         event={activeEvent}
+        conflictingEvent={activeEventConflict}
         onClose={handleCloseEventSheet}
         onTogglePlanned={handleTogglePlanned}
       />
