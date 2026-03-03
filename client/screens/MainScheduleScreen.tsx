@@ -8,7 +8,6 @@ import { FilterChips } from "@/components/FilterChips";
 import { DateSelector } from "@/components/DateSelector";
 import { SearchBar } from "@/components/SearchBar";
 import { TimeSlotRow } from "@/components/TimeSlotRow";
-import { NowIndicator } from "@/components/NowIndicator";
 import { EmptyState } from "@/components/EmptyState";
 import { ConflictModal } from "@/components/ConflictModal";
 import { AppHeader } from "@/components/AppHeader";
@@ -131,7 +130,6 @@ export default function MainScheduleScreen() {
   }, [events, hasConflict, togglePlanned]);
 
   const showNowIndicator = isScheduleView && isSameDay(currentDate, now);
-  const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, now));
   const nowIndicatorOffset = useMemo(() => {
     if (!showNowIndicator || scheduleTimeSlots.length === 0) return null;
     if (!scheduleTimeSlots.every((_, i) => Boolean(slotLayouts[i]))) return null;
@@ -195,16 +193,20 @@ export default function MainScheduleScreen() {
               {showNowIndicator && nowIndicatorOffset !== null ? (
                 <View
                   pointerEvents="none"
-                  style={[styles.nowIndicatorOverlay, { top: Math.max(0, nowIndicatorOffset - 4) }]}
-                >
-                  <NowIndicator now={now} compact />
-                </View>
+                  style={[
+                    styles.nowDot,
+                    {
+                      top: Math.max(0, nowIndicatorOffset - 6),
+                      backgroundColor: theme.nowIndicator,
+                      borderColor: theme.backgroundRoot,
+                    },
+                  ]}
+                />
               ) : null}
             </View>
           </>
         ) : (
           <>
-            {!isScheduleView && hasEventsToday ? <NowIndicator now={now} /> : null}
             {myScheduleSections.length > 0 ? myScheduleSections.map((section, si) => (
               <View key={section.dateLabel}>
                 <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
@@ -259,7 +261,15 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scheduleSlotsContainer: { position: "relative" },
   timelineRail: { position: "absolute", left: Spacing.lg + 56, top: 0, bottom: 0, width: 1 },
-  nowIndicatorOverlay: { position: "absolute", left: 0, right: 0, zIndex: 5 },
+  nowDot: {
+    position: "absolute",
+    left: Spacing.lg + 56 - 6,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    zIndex: 6,
+  },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
   dateHeader: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },
   dateLabel: { fontSize: 16, fontWeight: "600" },
