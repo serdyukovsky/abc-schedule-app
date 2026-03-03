@@ -26,7 +26,7 @@ export function TimeSlotRow({ time, endTime, events, onEventPress, onTogglePlann
         <Text style={[styles.timeText, { color: theme.textSecondary }]}>{time}</Text>
         {endTime ? <Text style={[styles.endTimeText, { color: theme.textMuted }]}>{endTime}</Text> : null}
       </View>
-      <View style={[styles.divider, { backgroundColor: theme.separator }]} />
+      <View style={styles.timelineGap} />
       <View style={styles.eventsColumn}>
         {events.map((event) => {
           const isPast = event.endTime < now;
@@ -47,6 +47,6 @@ const styles = StyleSheet.create({
   timeColumn: { width: 56, alignItems: "flex-end", paddingRight: Spacing.md },
   timeText: { fontSize: 14, fontWeight: "600", letterSpacing: 0.3 },
   endTimeText: { fontSize: 11, marginTop: 2 },
-  divider: { width: 1, marginRight: Spacing.md },
+  timelineGap: { width: 1 + Spacing.md },
   eventsColumn: { flex: 1 },
 });

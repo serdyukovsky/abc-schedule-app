@@ -17,6 +17,7 @@ import { Event } from "@/lib/pb-types";
 
 interface TimeSlot { time: string; endTime?: string; events: Event[]; start: Date; end: Date }
 interface DaySection { date: Date; dateLabel: string; slots: TimeSlot[] }
+interface SlotLayout { y: number; height: number }
 
 const formatTime = (date: Date) => date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", hour12: false });
 const formatDate = (date: Date) => date.toLocaleDateString("ru-RU", { weekday: "long", month: "short", day: "numeric" });
@@ -44,6 +45,7 @@ export default function MainScheduleScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [slotLayouts, setSlotLayouts] = useState<Record<number, SlotLayout>>({});
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30_000);
@@ -79,6 +81,10 @@ export default function MainScheduleScreen() {
 
   const scheduleTimeSlots = useMemo(() => buildSlots(filteredEvents), [filteredEvents]);
 
+  useEffect(() => {
+    setSlotLayouts({});
+  }, [scheduleTimeSlots]);
+
   const myScheduleSections = useMemo((): DaySection[] => {
     const byDay: Record<string, Event[]> = {};
     plannedEvents.forEach((e) => { const k = getDateKey(e.startTime); if (!byDay[k]) byDay[k] = []; byDay[k].push(e); });
@@ -104,21 +110,45 @@ export default function MainScheduleScreen() {
 
   const showNowIndicator = isScheduleView && isSameDay(currentDate, now);
   const hasEventsToday = plannedEvents.some((e) => isSameDay(e.startTime, now));
-  const nowIndicatorIndex = useMemo(() => {
-    if (!showNowIndicator || scheduleTimeSlots.length === 0) return -1;
+  const setSlotLayout = useCallback((index: number, y: number, height: number) => {
+    setSlotLayouts((prev) => {
+      const existing = prev[index];
+      if (existing && Math.abs(existing.y - y) < 0.5 && Math.abs(existing.height - height) < 0.5) {
+        return prev;
+      }
+      return { ...prev, [index]: { y, height } };
+    });
+  }, []);
 
-    if (now < scheduleTimeSlots[0].start) return 0;
+  const nowIndicatorOffset = useMemo(() => {
+    if (!showNowIndicator || scheduleTimeSlots.length === 0) return null;
+    if (!scheduleTimeSlots.every((_, i) => Boolean(slotLayouts[i]))) return null;
+
+    const nowMs = now.getTime();
+    const firstStartMs = scheduleTimeSlots[0].start.getTime();
+    if (nowMs <= firstStartMs) {
+      return slotLayouts[0].y;
+    }
 
     for (let i = 0; i < scheduleTimeSlots.length; i += 1) {
       const slot = scheduleTimeSlots[i];
-      const next = scheduleTimeSlots[i + 1];
+      const layout = slotLayouts[i];
+      const segmentStartMs = slot.start.getTime();
+      const segmentEndMs = i < scheduleTimeSlots.length - 1
+        ? scheduleTimeSlots[i + 1].start.getTime()
+        : slot.end.getTime();
 
-      if (now >= slot.start && now < slot.end) return i + 1;
-      if (next && now >= slot.end && now < next.start) return i + 1;
+      if (nowMs <= segmentEndMs) {
+        const duration = Math.max(1, segmentEndMs - segmentStartMs);
+        const progress = Math.min(1, Math.max(0, (nowMs - segmentStartMs) / duration));
+        return layout.y + layout.height * progress;
+      }
     }
 
-    return scheduleTimeSlots.length;
-  }, [showNowIndicator, scheduleTimeSlots, now]);
+    const lastIndex = scheduleTimeSlots.length - 1;
+    const lastLayout = slotLayouts[lastIndex];
+    return lastLayout.y + lastLayout.height;
+  }, [showNowIndicator, scheduleTimeSlots, slotLayouts, now]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
@@ -128,16 +158,38 @@ export default function MainScheduleScreen() {
         {isScheduleView ? (
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
-            {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
-              <React.Fragment key={slot.time}>
-                {nowIndicatorIndex === i ? <NowIndicator now={now} /> : null}
-                {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} />
-              </React.Fragment>
-            )) : (
-              <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
-            )}
-            {nowIndicatorIndex === scheduleTimeSlots.length ? <NowIndicator now={now} /> : null}
+            <View style={styles.scheduleSlotsContainer}>
+              <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
+              {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
+                <View
+                  key={slot.time}
+                  onLayout={(e: any) => {
+                    const { y, height } = e.nativeEvent.layout;
+                    setSlotLayout(i, y, height);
+                  }}
+                >
+                  {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                  <TimeSlotRow
+                    time={slot.time}
+                    endTime={slot.endTime}
+                    events={slot.events}
+                    onEventPress={handleEventPress}
+                    onTogglePlanned={handleTogglePlanned}
+                    hasConflict={hasConflict}
+                  />
+                </View>
+              )) : (
+                <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
+              )}
+              {showNowIndicator && nowIndicatorOffset !== null ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.nowIndicatorOverlay, { top: Math.max(0, nowIndicatorOffset - 4) }]}
+                >
+                  <NowIndicator now={now} compact />
+                </View>
+              ) : null}
+            </View>
           </>
         ) : (
           <>
@@ -194,6 +246,9 @@ export default function MainScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, position: "relative" },
   scrollView: { flex: 1 },
+  scheduleSlotsContainer: { position: "relative" },
+  timelineRail: { position: "absolute", left: Spacing.lg + 56, top: 0, bottom: 0, width: 1 },
+  nowIndicatorOverlay: { position: "absolute", left: 0, right: 0, zIndex: 5 },
   slotDivider: { height: 1, marginLeft: 72 + Spacing.lg, marginRight: Spacing.lg },
   dateHeader: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md, borderBottomWidth: 1 },
   dateLabel: { fontSize: 16, fontWeight: "600" },
