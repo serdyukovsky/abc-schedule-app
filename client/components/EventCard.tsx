@@ -32,29 +32,29 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
       testID={`event-card-${event.id}`}
     >
       <View style={styles.content}>
-        <View style={styles.topRow}>
-          <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
-            <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</ThemedText>
+        <Pressable onPress={onPress} style={styles.mainTapArea} testID={`event-title-${event.id}`}>
+          <View style={styles.topRow}>
+            <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
+              <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</ThemedText>
+            </View>
           </View>
-        </View>
 
-        <Pressable onPress={onPress} testID={`event-title-${event.id}`}>
           <ThemedText style={[styles.title, { color: isInactive ? theme.textSecondary : theme.text }]} numberOfLines={2}>
             {event.title}
           </ThemedText>
-        </Pressable>
 
-        <View style={styles.metaRow}>
-          {event.speakerName ? (
-            <SpeakerRow name={event.speakerName} photoUrl={event.speakerPhoto} size={22} />
-          ) : null}
-          {event.location ? (
-            <View style={styles.locationRow}>
-              <Feather name="map-pin" size={12} color={theme.textMuted} />
-              <ThemedText style={[styles.locationText, { color: theme.textMuted }]}>{event.location}</ThemedText>
-            </View>
-          ) : null}
-        </View>
+          <View style={styles.metaRow}>
+            {event.speakerName ? (
+              <SpeakerRow name={event.speakerName} photoUrl={event.speakerPhoto} size={22} />
+            ) : null}
+            {event.location ? (
+              <View style={styles.locationRow}>
+                <Feather name="map-pin" size={12} color={theme.textMuted} />
+                <ThemedText style={[styles.locationText, { color: theme.textMuted }]}>{event.location}</ThemedText>
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
 
         {showActions ? (
           <Pressable onPress={() => onTogglePlanned?.()} style={styles.addButton} testID={`add-button-${event.id}`}>
@@ -69,11 +69,12 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
 const styles = StyleSheet.create({
   container: { borderRadius: BorderRadius.sm, borderLeftWidth: 3, overflow: "hidden", marginBottom: Spacing.sm },
   content: { padding: Spacing.md, minHeight: 80, position: "relative" },
+  mainTapArea: { paddingRight: 48 },
   topRow: { flexDirection: "row", alignItems: "center", gap: Spacing.sm, marginBottom: Spacing.xs },
   trackBadge: { paddingHorizontal: Spacing.sm, paddingVertical: 2, borderRadius: BorderRadius.xs },
   trackText: { fontSize: 10, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5 },
-  title: { fontSize: 15, fontWeight: "600", lineHeight: 20, paddingRight: 48 },
-  metaRow: { marginTop: Spacing.sm, paddingRight: 48, gap: Spacing.xs },
+  title: { fontSize: 15, fontWeight: "600", lineHeight: 20 },
+  metaRow: { marginTop: Spacing.sm, gap: Spacing.xs },
   locationRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   locationText: { fontSize: 12 },
   addButton: { position: "absolute", bottom: Spacing.sm, right: Spacing.md, width: 44, height: 44, alignItems: "center", justifyContent: "center" },
