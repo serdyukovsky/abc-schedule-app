@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { View, Text, ScrollView, StyleSheet, useSafeAreaInsets } from "@/components/primitives";
 import { useTheme } from "@/hooks/useTheme";
 import { useEvents } from "@/context/EventContext";
@@ -44,6 +45,17 @@ export default function MainScheduleScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+
+  // Open event sheet from deep link (e.g. notification button)
+  const location = useLocation();
+  useEffect(() => {
+    const openEventId = (location.state as any)?.openEventId;
+    if (openEventId) {
+      setActiveEventId(openEventId);
+      // Clear state so it doesn't re-open on re-render
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();

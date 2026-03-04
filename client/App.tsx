@@ -63,7 +63,7 @@ function AppRoutes() {
 
   useEffect(() => {
     if (isLoggedIn && !showOnboarding && deepEventId) {
-      navigate(`/event/${deepEventId}`, { replace: true });
+      navigate(`/`, { replace: true, state: { openEventId: deepEventId } });
     }
   }, [isLoggedIn, showOnboarding, deepEventId, navigate]);
 
