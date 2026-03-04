@@ -53,6 +53,8 @@ export default function MainScheduleScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const hasSearchQuery = searchQuery.trim().length > 0;
+  const isGlobalSearch = hasSearchQuery;
 
   // Open event sheet or switch tab from deep link / navigation state
   const location = useLocation();
@@ -94,11 +96,12 @@ export default function MainScheduleScreen() {
       event.location.toLowerCase().includes(lq) || event.track.toLowerCase().includes(lq);
   };
 
-  const filteredEvents = useMemo(() => events.filter((e) =>
-    isSameDay(e.startTime, currentDate) &&
-    (selectedTrack === "Все" || e.track === selectedTrack) &&
-    matchesSearch(e, searchQuery)
-  ), [events, currentDate, selectedTrack, searchQuery]);
+  const filteredEvents = useMemo(() => events.filter((e) => {
+    const trackMatches = selectedTrack === "Все" || e.track === selectedTrack;
+    const searchMatches = matchesSearch(e, searchQuery);
+    const dayMatches = isGlobalSearch ? true : isSameDay(e.startTime, currentDate);
+    return dayMatches && trackMatches && searchMatches;
+  }), [events, currentDate, selectedTrack, searchQuery, isGlobalSearch]);
 
   const buildSlots = (evts: Event[]): TimeSlot[] => {
     const grouped: Record<string, Event[]> = {};
@@ -112,6 +115,24 @@ export default function MainScheduleScreen() {
   };
 
   const scheduleTimeSlots = useMemo(() => buildSlots(filteredEvents), [filteredEvents]);
+
+  const globalSearchSections = useMemo((): DaySection[] => {
+    if (!isGlobalSearch) return [];
+    const byDay = new Map<string, Event[]>();
+    for (const event of filteredEvents) {
+      const dayKey = getDateKey(event.startTime);
+      if (!byDay.has(dayKey)) byDay.set(dayKey, []);
+      byDay.get(dayKey)!.push(event);
+    }
+
+    return Array.from(byDay.values())
+      .sort((a, b) => a[0].startTime.getTime() - b[0].startTime.getTime())
+      .map((dayEvents) => ({
+        date: dayEvents[0].startTime,
+        dateLabel: formatDate(dayEvents[0].startTime),
+        slots: buildSlots(dayEvents),
+      }));
+  }, [filteredEvents, isGlobalSearch]);
 
 
   const myScheduleSections = useMemo((): DaySection[] => {
@@ -152,23 +173,49 @@ export default function MainScheduleScreen() {
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
             <View style={styles.scheduleSlotsContainer}>
-              {scheduleTimeSlots.length > 0 ? (
+              {scheduleTimeSlots.length > 0 && !isGlobalSearch ? (
                 <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
               ) : null}
-              {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
-                <View key={slot.time}>
-                  {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                  <TimeSlotRow
-                    time={slot.time}
-                    endTime={slot.endTime}
-                    events={slot.events}
-                    onEventPress={handleEventPress}
-                    onTogglePlanned={handleTogglePlanned}
-                    hasConflict={hasConflict}
-                  />
-                </View>
-              )) : (
-                <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
+              {isGlobalSearch ? (
+                globalSearchSections.length > 0 ? globalSearchSections.map((section, sectionIndex) => (
+                  <View key={section.dateLabel}>
+                    <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
+                      <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
+                    </View>
+                    {section.slots.map((slot, i) => (
+                      <View key={`${section.dateLabel}-${slot.time}`}>
+                        {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                        <TimeSlotRow
+                          time={slot.time}
+                          endTime={slot.endTime}
+                          events={slot.events}
+                          onEventPress={handleEventPress}
+                          onTogglePlanned={handleTogglePlanned}
+                          hasConflict={hasConflict}
+                        />
+                      </View>
+                    ))}
+                    {sectionIndex < globalSearchSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
+                  </View>
+                )) : (
+                  <EmptyState title="Ничего не найдено" message={`По запросу «${searchQuery}» ничего не найдено.`} />
+                )
+              ) : (
+                scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
+                  <View key={slot.time}>
+                    {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                    <TimeSlotRow
+                      time={slot.time}
+                      endTime={slot.endTime}
+                      events={slot.events}
+                      onEventPress={handleEventPress}
+                      onTogglePlanned={handleTogglePlanned}
+                      hasConflict={hasConflict}
+                    />
+                  </View>
+                )) : (
+                  <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
+                )
               )}
             </View>
           </>
