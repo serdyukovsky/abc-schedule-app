@@ -35,6 +35,14 @@ export default function MainScheduleScreen() {
   const [selectedSegment, setSelectedSegment] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+  // On first load pick today's date if it exists in eventDays.
+  useEffect(() => {
+    if (selectedDate || eventDays.length === 0) return;
+    const today = new Date();
+    const todayInSchedule = eventDays.find((d) => isSameDay(d.date, today));
+    setSelectedDate(todayInSchedule ? todayInSchedule.date : eventDays[0].date);
+  }, [eventDays, selectedDate]);
+
   // Auto-select first date when eventDays load
   const currentDate = selectedDate ?? eventDays[0]?.date ?? new Date();
   const [selectedTrack, setSelectedTrack] = useState("Все");
@@ -144,7 +152,9 @@ export default function MainScheduleScreen() {
           <>
             <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
             <View style={styles.scheduleSlotsContainer}>
-              <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
+              {scheduleTimeSlots.length > 0 ? (
+                <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
+              ) : null}
               {scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
                 <View key={slot.time}>
                   {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
