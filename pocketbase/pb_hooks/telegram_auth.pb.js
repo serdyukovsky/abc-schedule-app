@@ -1,9 +1,14 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 routerAdd("POST", "/api/telegram-auth", (e) => {
+  const fail = (status, message) => {
+    console.log(`[telegram-auth] ${status} ${message}`);
+    return e.json(status, { error: message, message });
+  };
+
   const body = e.requestInfo().body || {};
   const initData = body.initData;
-  if (!initData || typeof initData !== "string") return e.json(400, { error: "initData is required" });
+  if (!initData || typeof initData !== "string") return fail(400, "initData is required");
 
   const params = {};
   let hash = "";
@@ -18,12 +23,12 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
     params[key] = value;
   }
 
-  if (!hash) return e.json(400, { error: "hash not found in initData" });
+  if (!hash) return fail(400, "hash not found in initData");
 
   const dataCheckString = Object.keys(params).sort().map((k) => `${k}=${params[k]}`).join("\n");
 
   const botToken = $os.getenv("TELEGRAM_BOT_TOKEN");
-  if (!botToken) return e.json(500, { error: "TELEGRAM_BOT_TOKEN not configured" });
+  if (!botToken) return fail(500, "TELEGRAM_BOT_TOKEN not configured");
 
   // PocketBase's $security.hs256 uses string keys (UTF-8 bytes), but Telegram's verification
   // requires a binary intermediate key (raw HMAC bytes). Python is the only reliable option here.
@@ -37,10 +42,11 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
     ).output();
     computedHash = toString(out).trim().toLowerCase();
   } catch (err) {
-    return e.json(500, { error: "Telegram signature verification failed" });
+    console.log(`[telegram-auth] signature command failed: ${err}`);
+    return fail(500, "Telegram signature verification failed");
   }
 
-  if (!computedHash || !$security.equal(computedHash, hash)) return e.json(401, { error: "Invalid initData signature" });
+  if (!computedHash || !$security.equal(computedHash, hash)) return fail(401, "Invalid initData signature");
 
   // Keep a practical validity window because some Telegram Android clients
   // may reuse WebView session data longer than expected.
@@ -54,15 +60,15 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
   const authDate = parseInt(params["auth_date"] || "0", 10);
   const now = Math.floor(Date.now() / 1000);
   if (!authDate || now - authDate > authMaxAgeSec || authDate - now > authFutureSkewSec) {
-    return e.json(401, { error: "initData expired" });
+    return fail(401, "initData expired");
   }
 
   let userData;
   try { userData = JSON.parse(params["user"] || "{}"); }
-  catch (_) { return e.json(400, { error: "Invalid user data in initData" }); }
+  catch (_) { return fail(400, "Invalid user data in initData"); }
 
   const telegramId = String(userData.id || "");
-  if (!telegramId) return e.json(400, { error: "user.id not found in initData" });
+  if (!telegramId) return fail(400, "user.id not found in initData");
 
   let record;
   try {
@@ -91,7 +97,8 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
       record.set("telegramUsername", userData.username || "");
       $app.save(record);
     } catch (err) {
-      return e.json(500, { error: "Failed to create user" });
+      console.log(`[telegram-auth] user create failed for tg=${telegramId}: ${err}`);
+      return fail(500, "Failed to create user");
     }
   }
 

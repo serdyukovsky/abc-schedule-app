@@ -27,7 +27,15 @@ function LoadingScreen() {
   );
 }
 
-function TelegramAuthError() {
+function TelegramAuthError({
+  onRetry,
+  retrying,
+  details,
+}: {
+  onRetry: () => void;
+  retrying: boolean;
+  details: string | null;
+}) {
   const { theme } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: theme.backgroundRoot, padding: 24 }}>
@@ -37,18 +45,32 @@ function TelegramAuthError() {
       <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center", marginBottom: 20 }}>
         Откройте бота, нажмите /start и перейдите в приложение по кнопке «Открыть расписание», затем повторите вход.
       </Text>
+      {details ? (
+        <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: "center", marginBottom: 16 }}>
+          {details}
+        </Text>
+      ) : null}
       <Pressable
-        onPress={() => window.location.reload()}
-        style={{ backgroundColor: theme.link, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}
+        onPress={onRetry}
+        style={{
+          backgroundColor: theme.link,
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          borderRadius: 12,
+          opacity: retrying ? 0.75 : 1,
+        }}
+        disabled={retrying}
       >
-        <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "600" }}>Повторить</Text>
+        <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "600" }}>
+          {retrying ? "Проверяем..." : "Повторить вход"}
+        </Text>
       </Pressable>
     </View>
   );
 }
 
 function AppRoutes() {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { isLoggedIn, isLoading, isTelegramAuthPending, telegramAuthError, retryTelegramAuth } = useAuth();
   const navigate = useNavigate();
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem("abc-onboarding-v1")
@@ -78,7 +100,15 @@ function AppRoutes() {
 
   if (!isLoggedIn) {
     if (isTelegramWebApp()) {
-      return <TelegramAuthError />;
+      return (
+        <TelegramAuthError
+          onRetry={() => {
+            void retryTelegramAuth();
+          }}
+          retrying={isTelegramAuthPending}
+          details={telegramAuthError}
+        />
+      );
     }
     return (
       <Routes>

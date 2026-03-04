@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { pb } from "@/lib/pb";
 import { isTelegramWebApp } from "@/hooks/useTelegram";
 import type { RecordModel } from "pocketbase";
@@ -16,11 +16,14 @@ interface AuthContextType {
   isLoggedIn: boolean;
   isLoading: boolean;
   isTelegramUser: boolean;
+  isTelegramAuthPending: boolean;
+  telegramAuthError: string | null;
   profile: UserProfile | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (profile: UserProfile, password: string) => Promise<boolean>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
+  retryTelegramAuth: () => Promise<boolean>;
   logout: () => Promise<void>;
   getFullName: () => string;
 }
@@ -45,6 +48,32 @@ async function waitForTelegramInitData(timeoutMs = 7000, stepMs = 180): Promise<
   return initData;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeTelegramAuthError(error: unknown): string {
+  const fallback = "Не удалось подтвердить доступ через Telegram.";
+  const raw =
+    (typeof (error as any)?.response?.error === "string" && (error as any).response.error) ||
+    (typeof (error as any)?.response?.message === "string" && (error as any).response.message) ||
+    (typeof (error as any)?.message === "string" && (error as any).message) ||
+    "";
+  const message = raw.trim();
+
+  if (!message) return fallback;
+  if (/initdata is required/i.test(message)) {
+    return "Telegram не передал данные входа. Закройте и снова откройте мини-приложение из кнопки бота.";
+  }
+  if (/initdata expired/i.test(message)) {
+    return "Сессия входа устарела. Вернитесь в бота и снова откройте расписание кнопкой.";
+  }
+  if (/invalid initdata signature/i.test(message)) {
+    return "Не удалось проверить подпись Telegram. Попробуйте открыть расписание заново через бота.";
+  }
+  return message.length > 180 ? fallback : message;
+}
+
 function recordToProfile(record: RecordModel): UserProfile {
   return {
     firstName: record.firstName || "",
@@ -60,15 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTelegramUser, setIsTelegramUser] = useState(false);
+  const [isTelegramAuthPending, setIsTelegramAuthPending] = useState(false);
+  const [telegramAuthError, setTelegramAuthError] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const telegramAuthInFlightRef = useRef(false);
 
   const loginWithTelegram = async (waitForInitData = false): Promise<boolean> => {
     try {
       let initData = getTelegramInitData();
       if (!initData && waitForInitData) {
-        initData = await waitForTelegramInitData();
+        initData = await waitForTelegramInitData(12000, 200);
       }
-      if (!initData) return false;
+      if (!initData) {
+        setTelegramAuthError("Telegram пока не передал данные входа. Нажмите «Повторить вход».");
+        return false;
+      }
 
       const response = await pb.send("/api/telegram-auth", {
         method: "POST",
@@ -79,10 +114,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(recordToProfile(response.record));
       setIsLoggedIn(true);
       setIsTelegramUser(true);
+      setTelegramAuthError(null);
       return true;
     } catch (error) {
       console.error("Telegram auth error:", error);
+      setTelegramAuthError(normalizeTelegramAuthError(error));
       return false;
+    }
+  };
+
+  const retryTelegramAuth = async (): Promise<boolean> => {
+    if (telegramAuthInFlightRef.current) return false;
+    telegramAuthInFlightRef.current = true;
+    setIsTelegramAuthPending(true);
+    setTelegramAuthError(null);
+
+    try {
+      const delaysMs = [0, 900, 1700, 2600];
+      for (let i = 0; i < delaysMs.length; i += 1) {
+        if (delaysMs[i] > 0) await sleep(delaysMs[i]);
+        const success = await loginWithTelegram(i === 0);
+        if (success) return true;
+      }
+      return false;
+    } finally {
+      telegramAuthInFlightRef.current = false;
+      setIsTelegramAuthPending(false);
     }
   };
 
@@ -95,12 +152,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProfile(recordToProfile(pb.authStore.record));
           setIsLoggedIn(true);
           setIsTelegramUser(Boolean(pb.authStore.record.telegramId));
+          setTelegramAuthError(null);
           return;
         }
 
         if (isTelegramWebApp()) {
-          // On some Android clients initData may appear with a small delay.
-          await loginWithTelegram(true);
+          // Android clients may expose initData with delay, so retry a few times.
+          await retryTelegramAuth();
         }
       } finally {
         if (active) setIsLoading(false);
@@ -115,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(recordToProfile(record));
         setIsLoggedIn(true);
         setIsTelegramUser(Boolean(record.telegramId));
+        setTelegramAuthError(null);
       } else {
         setProfile(null);
         setIsLoggedIn(false);
@@ -206,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false);
     setProfile(null);
     setIsTelegramUser(false);
+    setTelegramAuthError(null);
   };
 
   const getFullName = (): string => {
@@ -215,7 +275,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, isLoading, isTelegramUser, profile, login, register, updateProfile, changePassword, logout, getFullName }}
+      value={{
+        isLoggedIn,
+        isLoading,
+        isTelegramUser,
+        isTelegramAuthPending,
+        telegramAuthError,
+        profile,
+        login,
+        register,
+        updateProfile,
+        changePassword,
+        retryTelegramAuth,
+        logout,
+        getFullName,
+      }}
     >
       {children}
     </AuthContext.Provider>
