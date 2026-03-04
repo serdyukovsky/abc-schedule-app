@@ -97,9 +97,9 @@ function fmtTime(dateStr) {
   return d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 }
 
-/** Convert a JS Date to PocketBase ISO filter string. */
+/** Convert a JS Date to PocketBase filter date string (space separator, with ms). */
 function toPbDate(d) {
-  return d.toISOString().replace(/\.\d{3}Z$/, "Z");
+  return d.toISOString().replace("T", " ").replace("Z", "").replace(/\.\d{3}$/, ".000Z");
 }
 
 async function findUsersByTelegramId(telegramId) {
