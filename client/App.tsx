@@ -53,19 +53,26 @@ function AppRoutes() {
   const [showOnboarding, setShowOnboarding] = useState(
     () => !localStorage.getItem("abc-onboarding-v1")
   );
-  const [deepEventId] = useState<string | null>(() => {
+  const [deepParam] = useState<{ type: "event"; id: string } | { type: "my_schedule" } | null>(() => {
     try {
       const sp = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param;
-      if (typeof sp === "string" && sp.startsWith("event_")) return sp.slice("event_".length);
+      if (typeof sp === "string") {
+        if (sp.startsWith("event_")) return { type: "event", id: sp.slice("event_".length) };
+        if (sp === "my_schedule") return { type: "my_schedule" };
+      }
     } catch {}
     return null;
   });
 
   useEffect(() => {
-    if (isLoggedIn && !showOnboarding && deepEventId) {
-      navigate(`/`, { replace: true, state: { openEventId: deepEventId } });
+    if (isLoggedIn && !showOnboarding && deepParam) {
+      if (deepParam.type === "event") {
+        navigate(`/`, { replace: true, state: { openEventId: deepParam.id } });
+      } else if (deepParam.type === "my_schedule") {
+        navigate(`/`, { replace: true, state: { openMySchedule: true } });
+      }
     }
-  }, [isLoggedIn, showOnboarding, deepEventId, navigate]);
+  }, [isLoggedIn, showOnboarding, deepParam, navigate]);
 
   if (isLoading) return <LoadingScreen />;
 

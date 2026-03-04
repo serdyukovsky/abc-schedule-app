@@ -344,7 +344,7 @@ async function handleScheduleCommand(ctx) {
 
   await ctx.reply(`<b>Твой план на сегодня:</b>\n\n${lines}`, {
     parse_mode: "HTML",
-    ...openKeyboard,
+    ...myScheduleKeyboard,
   });
 }
 
@@ -354,6 +354,11 @@ const bot = new Telegraf(botToken);
 
 const openKeyboard = Markup.inlineKeyboard([
   [Markup.button.url("🏔 Открыть расписание", miniAppDeepLink)],
+]);
+
+const myScheduleLink = withBuildTag(`${miniAppBaseLink}?startapp=my_schedule&mode=fullscreen`);
+const myScheduleKeyboard = Markup.inlineKeyboard([
+  [Markup.button.url("📋 Открыть моё расписание", myScheduleLink)],
 ]);
 
 // Persistent reply keyboard — always visible at the bottom of the chat

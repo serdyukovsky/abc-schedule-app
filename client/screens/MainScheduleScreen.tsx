@@ -49,10 +49,13 @@ export default function MainScheduleScreen() {
   // Open event sheet from deep link (e.g. notification button)
   const location = useLocation();
   useEffect(() => {
-    const openEventId = (location.state as any)?.openEventId;
-    if (openEventId) {
-      setActiveEventId(openEventId);
-      // Clear state so it doesn't re-open on re-render
+    const state = location.state as any;
+    if (state?.openEventId) {
+      setActiveEventId(state.openEventId);
+      window.history.replaceState({}, "");
+    }
+    if (state?.openMySchedule) {
+      setSelectedSegment(0);
       window.history.replaceState({}, "");
     }
   }, [location.state]);
