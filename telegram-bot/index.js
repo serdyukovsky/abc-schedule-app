@@ -371,18 +371,25 @@ const menuKeyboard = Markup.keyboard([
 // Always responds instantly — no PocketBase calls here
 bot.start(async (ctx) => {
   console.log(`[start] /start from ${ctx.from?.id} (@${ctx.from?.username})`);
-  // First message removes any persistent reply keyboard
+  // Welcome message with reply keyboard
   await ctx.reply(
     "Привет! 👋 Это официальный гид по Altay Business Camp 2026.\n\n" +
     "Я помогу тебе сориентироваться в 5 днях интенсива, не пропустить топовых спикеров " +
-    "и собрать своё личное расписание.",
-    Markup.removeKeyboard()
+    "и собрать своё личное расписание.\n\n" +
+    "Открой расписание, выбери интересные события — и я напомню о них заранее!",
+    menuKeyboard
   );
-  // Second message shows the inline button to open the app
-  await ctx.reply(
-    "Открой расписание, выбери интересные события — и я напомню о них заранее! 👇",
+  // Pinned message with inline button to open the app
+  const pinMsg = await ctx.reply(
+    "👇 Нажми, чтобы открыть расписание",
     openKeyboard
   );
+  try {
+    await ctx.pinChatMessage(pinMsg.message_id, { disable_notification: true });
+  } catch (err) {
+    // Pin may fail in groups or if bot lacks permission — not critical
+    console.log(`[start] pin failed: ${err.message}`);
+  }
 });
 
 // "Поехали!" → open mini app + show persistent menu
