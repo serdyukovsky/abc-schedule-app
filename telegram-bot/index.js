@@ -366,17 +366,17 @@ const menuKeyboard = Markup.keyboard([
 // Always responds instantly — no PocketBase calls here
 bot.start(async (ctx) => {
   console.log(`[start] /start from ${ctx.from?.id} (@${ctx.from?.username})`);
-  // Show welcome with inline "open schedule" button + persistent reply keyboard
+  // First message removes any persistent reply keyboard
   await ctx.reply(
     "Привет! 👋 Это официальный гид по Altay Business Camp 2026.\n\n" +
     "Я помогу тебе сориентироваться в 5 днях интенсива, не пропустить топовых спикеров " +
-    "и собрать своё личное расписание.\n\n" +
+    "и собрать своё личное расписание.",
+    Markup.removeKeyboard()
+  );
+  // Second message shows the inline button to open the app
+  await ctx.reply(
     "Открой расписание, выбери интересные события — и я напомню о них заранее! 👇",
-    {
-      ...Markup.inlineKeyboard([
-        [Markup.button.url("🏔 Открыть расписание", miniAppDeepLink)],
-      ]),
-    }
+    openKeyboard
   );
 });
 
