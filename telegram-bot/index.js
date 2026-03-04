@@ -419,7 +419,8 @@ function enableReminderScheduler() {
 
 async function start() {
   try {
-    await bot.launch({ dropPendingUpdates: true });
+    await bot.telegram.deleteWebhook({ drop_pending_updates: true });
+    bot.startPolling();
     const me = await bot.telegram.getMe();
     console.log(`Telegram bot started: @${me.username} (id=${me.id})`);
     try {
