@@ -221,42 +221,38 @@ async function handleTestReminder(ctx) {
     );
   }
 
-  // Find the user's next planned event (any future event)
+  // Fetch all user schedules and filter by time in JS
+  // (PocketBase doesn't support relation-field filters like event.startTime)
   const now = confNow();
-  let schedules;
+  let allSchedules;
   try {
-    schedules = await pb.collection("user_schedules").getFullList({
-      filter: `user = '${user.id}' && event.startTime >= '${toPbDate(now)}'`,
+    allSchedules = await pb.collection("user_schedules").getFullList({
+      filter: `user = '${user.id}'`,
       expand: "event,event.speaker",
-      sort: "event.startTime",
     });
   } catch (err) {
     return ctx.reply(`Ошибка запроса расписания: ${err.message}`);
   }
 
-  if (!schedules.length) {
-    // Try any event today even if already started
-    const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const dayEnd = new Date(dayStart.getTime() + 86_400_000);
-    try {
-      schedules = await pb.collection("user_schedules").getFullList({
-        filter: `user = '${user.id}' && event.startTime >= '${toPbDate(dayStart)}' && event.startTime < '${toPbDate(dayEnd)}'`,
-        expand: "event,event.speaker",
-        sort: "event.startTime",
-      });
-    } catch {}
-  }
+  // Find future events first, then fall back to any today
+  const nowMs = now.getTime();
+  const dayStartMs = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const withEvent = allSchedules
+    .filter((s) => s.expand?.event)
+    .map((s) => ({ sched: s, ev: s.expand.event, startMs: new Date(s.expand.event.startTime).getTime() }))
+    .sort((a, b) => a.startMs - b.startMs);
 
-  if (!schedules.length) {
+  let pick = withEvent.find((x) => x.startMs >= nowMs)
+    || withEvent.find((x) => x.startMs >= dayStartMs);
+
+  if (!pick) {
     return ctx.reply(
       "У тебя нет запланированных событий. Добавь что-нибудь в приложении, потом попробуй снова.",
       openKeyboard
     );
   }
 
-  const sched = schedules[0];
-  const ev = sched.expand?.event;
-  if (!ev) return ctx.reply("Событие не найдено.");
+  const ev = pick.ev;
 
   const speaker = ev.expand?.speaker;
   const speakerLine = speaker?.name ? `\n👤 ${esc(speaker.name)}` : "";
@@ -305,36 +301,43 @@ async function handleScheduleCommand(ctx) {
   }
 
   const userId = user.id;
-  // Use conference-local date for day boundaries (events stored as local-time-in-UTC)
-  const nowConf  = new Date(Date.now() + CONF_OFFSET_MS);
-  const dayStart = new Date(Date.UTC(nowConf.getUTCFullYear(), nowConf.getUTCMonth(), nowConf.getUTCDate()));
-  const dayEnd   = new Date(dayStart.getTime() + 86_400_000);
+  // Fetch all user schedules and filter by day in JS
+  // (PocketBase doesn't support relation-field filters like event.startTime)
+  const nowConf  = confNow();
+  const dayStartMs = Date.UTC(nowConf.getUTCFullYear(), nowConf.getUTCMonth(), nowConf.getUTCDate());
+  const dayEndMs   = dayStartMs + 86_400_000;
 
-  let schedules;
+  let allSchedules;
   try {
-    schedules = await pb.collection("user_schedules").getFullList({
-      filter: `user = '${userId}' && event.startTime >= '${toPbDate(dayStart)}' && event.startTime < '${toPbDate(dayEnd)}'`,
+    allSchedules = await pb.collection("user_schedules").getFullList({
+      filter: `user = '${userId}'`,
       expand: "event",
-      sort: "event.startTime",
     });
   } catch {
     return ctx.reply("Не удалось получить расписание. Попробуй позже.");
   }
 
-  if (!schedules.length) {
+  const todaySchedules = allSchedules
+    .filter((s) => {
+      const ev = s.expand?.event;
+      if (!ev) return false;
+      const t = new Date(ev.startTime).getTime();
+      return t >= dayStartMs && t < dayEndMs;
+    })
+    .sort((a, b) => new Date(a.expand.event.startTime) - new Date(b.expand.event.startTime));
+
+  if (!todaySchedules.length) {
     return ctx.reply(
       "На сегодня в твоём плане нет докладов.\nДобавь интересные события в приложении 👇",
       openKeyboard
     );
   }
 
-  const lines = schedules
+  const lines = todaySchedules
     .map((s) => {
-      const ev = s.expand?.event;
-      if (!ev) return null;
+      const ev = s.expand.event;
       return `• ${fmtTime(ev.startTime)} <b>${esc(ev.title)}</b>\n  📍 ${esc(ev.location)}`;
     })
-    .filter(Boolean)
     .join("\n\n");
 
   await ctx.reply(`<b>Твой план на сегодня:</b>\n\n${lines}`, {
