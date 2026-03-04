@@ -42,10 +42,20 @@ routerAdd("POST", "/api/telegram-auth", (e) => {
 
   if (!computedHash || !$security.equal(computedHash, hash)) return e.json(401, { error: "Invalid initData signature" });
 
-  // 10-minute window (Telegram recommends keeping it short)
+  // Keep a practical validity window because some Telegram Android clients
+  // may reuse WebView session data longer than expected.
+  const maxAgeRaw = $os.getenv("TELEGRAM_AUTH_MAX_AGE_SEC") || "86400";
+  const futureSkewRaw = $os.getenv("TELEGRAM_AUTH_FUTURE_SKEW_SEC") || "300";
+  const maxAgeSec = parseInt(maxAgeRaw, 10);
+  const futureSkewSec = parseInt(futureSkewRaw, 10);
+  const authMaxAgeSec = (!isNaN(maxAgeSec) && maxAgeSec > 0) ? maxAgeSec : 86400;
+  const authFutureSkewSec = (!isNaN(futureSkewSec) && futureSkewSec > 0) ? futureSkewSec : 300;
+
   const authDate = parseInt(params["auth_date"] || "0", 10);
   const now = Math.floor(Date.now() / 1000);
-  if (!authDate || now - authDate > 600 || authDate - now > 60) return e.json(401, { error: "initData expired" });
+  if (!authDate || now - authDate > authMaxAgeSec || authDate - now > authFutureSkewSec) {
+    return e.json(401, { error: "initData expired" });
+  }
 
   let userData;
   try { userData = JSON.parse(params["user"] || "{}"); }

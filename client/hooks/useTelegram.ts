@@ -9,7 +9,7 @@ function vibrateFallback(pattern: number | number[]) {
 
 export function isTelegramWebApp(): boolean {
   const webApp = getWebApp();
-  return Boolean(webApp?.initData);
+  return Boolean(webApp);
 }
 
 export function useTelegram() {

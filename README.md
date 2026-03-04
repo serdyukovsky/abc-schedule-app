@@ -63,6 +63,10 @@ TELEGRAM_BOT_TOKEN=YOUR_BOT_TOKEN npm run bot:start
 
 Telegram Mini App auth endpoint is implemented in `pocketbase/pb_hooks/telegram_auth.pb.js`.
 PocketBase process must have `TELEGRAM_BOT_TOKEN` set, otherwise Telegram login will fail.
+Optional auth window env for PocketBase process:
+
+- `TELEGRAM_AUTH_MAX_AGE_SEC` (default `86400`)
+- `TELEGRAM_AUTH_FUTURE_SKEW_SEC` (default `300`)
 
 ## Build
 

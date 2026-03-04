@@ -27,6 +27,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getTelegramInitData(): string {
+  try {
+    return window.Telegram?.WebApp?.initData?.trim() || "";
+  } catch {
+    return "";
+  }
+}
+
+async function waitForTelegramInitData(timeoutMs = 7000, stepMs = 180): Promise<string> {
+  const startedAt = Date.now();
+  let initData = getTelegramInitData();
+  while (!initData && Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, stepMs));
+    initData = getTelegramInitData();
+  }
+  return initData;
+}
+
 function recordToProfile(record: RecordModel): UserProfile {
   return {
     firstName: record.firstName || "",
@@ -44,9 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isTelegramUser, setIsTelegramUser] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  const loginWithTelegram = async (): Promise<boolean> => {
+  const loginWithTelegram = async (waitForInitData = false): Promise<boolean> => {
     try {
-      const initData = window.Telegram?.WebApp?.initData;
+      let initData = getTelegramInitData();
+      if (!initData && waitForInitData) {
+        initData = await waitForTelegramInitData();
+      }
       if (!initData) return false;
 
       const response = await pb.send("/api/telegram-auth", {
@@ -66,17 +87,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.record) {
-      setProfile(recordToProfile(pb.authStore.record));
-      setIsLoggedIn(true);
-      setIsTelegramUser(Boolean(pb.authStore.record.telegramId));
-      setIsLoading(false);
-    } else if (isTelegramWebApp()) {
-      // Auto-login via Telegram
-      loginWithTelegram().finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
-    }
+    let active = true;
+
+    const bootstrapAuth = async () => {
+      try {
+        if (pb.authStore.isValid && pb.authStore.record) {
+          setProfile(recordToProfile(pb.authStore.record));
+          setIsLoggedIn(true);
+          setIsTelegramUser(Boolean(pb.authStore.record.telegramId));
+          return;
+        }
+
+        if (isTelegramWebApp()) {
+          // On some Android clients initData may appear with a small delay.
+          await loginWithTelegram(true);
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    };
+
+    bootstrapAuth();
 
     // Listen for auth store changes
     const unsub = pb.authStore.onChange((_token, record) => {
@@ -91,7 +122,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => unsub();
+    return () => {
+      active = false;
+      unsub();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
