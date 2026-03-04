@@ -311,7 +311,7 @@ async function handleScheduleCommand(ctx) {
   try {
     allSchedules = await pb.collection("user_schedules").getFullList({
       filter: `user = '${userId}'`,
-      expand: "event",
+      expand: "event,event.speaker",
     });
   } catch {
     return ctx.reply("Не удалось получить расписание. Попробуй позже.");
@@ -336,7 +336,9 @@ async function handleScheduleCommand(ctx) {
   const lines = todaySchedules
     .map((s) => {
       const ev = s.expand.event;
-      return `• ${fmtTime(ev.startTime)} <b>${esc(ev.title)}</b>\n  📍 ${esc(ev.location)}`;
+      const speaker = ev.expand?.speaker;
+      const speakerLine = speaker?.name ? `\n  👤 ${esc(speaker.name)}` : "";
+      return `• ${fmtTime(ev.startTime)} <b>${esc(ev.title)}</b>\n  📍 ${esc(ev.location)}${speakerLine}`;
     })
     .join("\n\n");
 
@@ -364,12 +366,17 @@ const menuKeyboard = Markup.keyboard([
 // Always responds instantly — no PocketBase calls here
 bot.start(async (ctx) => {
   console.log(`[start] /start from ${ctx.from?.id} (@${ctx.from?.username})`);
+  // Show welcome with inline "open schedule" button + persistent reply keyboard
   await ctx.reply(
     "Привет! 👋 Это официальный гид по Altay Business Camp 2026.\n\n" +
     "Я помогу тебе сориентироваться в 5 днях интенсива, не пропустить топовых спикеров " +
     "и собрать своё личное расписание.\n\n" +
-    "Горы зовут! Используй кнопки внизу 👇",
-    menuKeyboard
+    "Открой расписание, выбери интересные события — и я напомню о них заранее! 👇",
+    {
+      ...Markup.inlineKeyboard([
+        [Markup.button.url("🏔 Открыть расписание", miniAppDeepLink)],
+      ]),
+    }
   );
 });
 
