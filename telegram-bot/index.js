@@ -440,9 +440,17 @@ async function start() {
         { command: "testreminder", description: "Тест уведомления" },
         { command: "help",         description: "Справка" },
       ]);
-      console.log("Bot commands registered");
+      // Menu button next to the message input — opens the mini app
+      await bot.telegram.setChatMenuButton({
+        menuButton: {
+          type: "web_app",
+          text: "Расписание",
+          web_app: { url: miniAppDeepLink },
+        },
+      });
+      console.log("Bot commands and menu button registered");
     } catch (err) {
-      console.error("setMyCommands failed:", err.message);
+      console.error("setMyCommands/menu failed:", err.message);
     }
   } catch (err) {
     console.error("FATAL: Failed to launch bot:", err.message);
