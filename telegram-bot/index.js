@@ -357,7 +357,6 @@ const openKeyboard = Markup.inlineKeyboard([
 // Persistent reply keyboard — always visible at the bottom of the chat
 const menuKeyboard = Markup.keyboard([
   ["📋 Мой план на сегодня"],
-  [Markup.button.webApp("🏔 Открыть расписание", miniAppDeepLink)],
 ]).resize();
 
 // ─── /start ───────────────────────────────────────────────────────────────────
@@ -440,15 +439,11 @@ async function start() {
         { command: "testreminder", description: "Тест уведомления" },
         { command: "help",         description: "Справка" },
       ]);
-      // Menu button next to the message input — opens the mini app
+      // Reset menu button to default commands menu (≡ button)
       await bot.telegram.setChatMenuButton({
-        menuButton: {
-          type: "web_app",
-          text: "Расписание",
-          web_app: { url: miniAppDeepLink },
-        },
+        menuButton: { type: "commands" },
       });
-      console.log("Bot commands and menu button registered");
+      console.log("Bot commands registered");
     } catch (err) {
       console.error("setMyCommands/menu failed:", err.message);
     }
