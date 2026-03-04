@@ -21,9 +21,26 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
   const { theme } = useTheme();
   const isInactive = hasConflict && !event.isPlanned;
   const cardOpacity = isPast ? 0.5 : isInactive ? 0.85 : 1;
+  const [flashNonce, setFlashNonce] = React.useState(0);
+  const isFirstRenderRef = React.useRef(true);
+  const prevPlannedRef = React.useRef(event.isPlanned);
+
+  React.useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      prevPlannedRef.current = event.isPlanned;
+      return;
+    }
+
+    if (prevPlannedRef.current !== event.isPlanned) {
+      prevPlannedRef.current = event.isPlanned;
+      setFlashNonce((v) => v + 1);
+    }
+  }, [event.isPlanned]);
 
   return (
     <div
+      className="event-card-shell"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -35,6 +52,7 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
         backgroundColor: theme.backgroundDefault,
         opacity: cardOpacity,
         position: "relative",
+        transition: "opacity 180ms ease, border-color 180ms ease, box-shadow 220ms ease",
       }}
       data-testid={`event-card-${event.id}`}
     >
@@ -51,8 +69,15 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
           }}
         />
       ) : null}
+      {flashNonce > 0 ? (
+        <div
+          key={`${event.id}-flash-${flashNonce}`}
+          className="event-card-plan-flash"
+          style={{ background: `radial-gradient(130% 120% at 86% 82%, ${theme.link}55 0%, ${theme.link}18 42%, transparent 76%)` }}
+        />
+      ) : null}
       <View style={styles.content}>
-        <Pressable onPress={onPress} style={styles.mainTapArea} testID={`event-title-${event.id}`}>
+        <Pressable onPress={onPress} style={styles.mainTapArea} testID={`event-title-${event.id}`} className="interactive-press">
           <View style={styles.topRow}>
             <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
               <ThemedText style={[styles.trackText, { color: theme.trackBadgeText }]}>{event.track}</ThemedText>
@@ -83,7 +108,7 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
         </Pressable>
 
         {showActions ? (
-          <Pressable onPress={() => onTogglePlanned?.()} style={styles.addButton} testID={`add-button-${event.id}`}>
+          <Pressable onPress={() => onTogglePlanned?.()} style={styles.addButton} testID={`add-button-${event.id}`} className="interactive-press">
             <Feather name={event.isPlanned ? "check-circle" : "plus-circle"} size={24} color={event.isPlanned ? theme.link : theme.textMuted} />
           </Pressable>
         ) : null}

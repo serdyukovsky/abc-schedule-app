@@ -24,7 +24,7 @@ export function SearchBar({ value, onChangeText, onClose, autoFocus = true }: Se
   }, [autoFocus]);
 
   return (
-    <View style={styles.outerContainer}>
+    <View style={styles.outerContainer} className="searchbar-enter">
       <View style={[styles.container, {
         backgroundColor: isDark ? "rgba(45,45,48,0.98)" : "rgba(255,255,255,0.98)",
         borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
@@ -42,14 +42,14 @@ export function SearchBar({ value, onChangeText, onClose, autoFocus = true }: Se
             testID="search-input"
           />
           {value.length > 0 ? (
-            <Pressable onPress={() => { onChangeText(""); inputRef.current?.focus(); }} style={styles.clearButton}>
+            <Pressable onPress={() => { onChangeText(""); inputRef.current?.focus(); }} style={styles.clearButton} className="interactive-press">
               <View style={[styles.clearIcon, { backgroundColor: theme.textMuted }]}>
                 <Feather name="x" size={12} color={theme.backgroundRoot} />
               </View>
             </Pressable>
           ) : null}
         </View>
-        <Pressable onPress={onClose} style={styles.cancelButton}>
+        <Pressable onPress={onClose} style={styles.cancelButton} className="interactive-press">
           <Text style={[styles.cancelText, { color: theme.link }]}>Отмена</Text>
         </Pressable>
       </View>

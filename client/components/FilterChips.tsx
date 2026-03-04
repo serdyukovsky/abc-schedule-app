@@ -19,6 +19,7 @@ export function FilterChips({ options, selected, onSelect }: FilterChipsProps) {
           <Pressable
             key={option}
             onPress={() => onSelect(option)}
+            className={`filter-chip interactive-press${isSelected ? " filter-chip--active" : ""}`}
             style={[styles.chip, { backgroundColor: isSelected ? theme.link : theme.backgroundSecondary }]}
           >
             <Text style={[styles.chipText, { color: isSelected ? theme.buttonText : theme.textSecondary }]}>

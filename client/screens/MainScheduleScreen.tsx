@@ -169,76 +169,78 @@ export default function MainScheduleScreen() {
       <AppHeader selectedSegment={selectedSegment} onSelectSegment={setSelectedSegment} topInset={insets.top} />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingTop: 52 + insets.top, paddingBottom: 90 + insets.bottom }} showsVerticalScrollIndicator={false}>
-        {isScheduleView ? (
-          <>
-            <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
-            <View style={styles.scheduleSlotsContainer}>
-              {scheduleTimeSlots.length > 0 && !isGlobalSearch ? (
-                <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
-              ) : null}
-              {isGlobalSearch ? (
-                globalSearchSections.length > 0 ? globalSearchSections.map((section, sectionIndex) => (
-                  <View key={section.dateLabel}>
-                    <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
-                      <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
-                    </View>
-                    {section.slots.map((slot, i) => (
-                      <View key={`${section.dateLabel}-${slot.time}`}>
-                        {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                        <TimeSlotRow
-                          time={slot.time}
-                          endTime={slot.endTime}
-                          events={slot.events}
-                          onEventPress={handleEventPress}
-                          onTogglePlanned={handleTogglePlanned}
-                          hasConflict={hasConflict}
-                        />
+        <View key={`segment-${selectedSegment}`} className="segment-content-enter">
+          {isScheduleView ? (
+            <>
+              <FilterChips options={trackNames} selected={selectedTrack} onSelect={setSelectedTrack} />
+              <View style={styles.scheduleSlotsContainer}>
+                {scheduleTimeSlots.length > 0 && !isGlobalSearch ? (
+                  <View pointerEvents="none" style={[styles.timelineRail, { backgroundColor: theme.separator }]} />
+                ) : null}
+                {isGlobalSearch ? (
+                  globalSearchSections.length > 0 ? globalSearchSections.map((section, sectionIndex) => (
+                    <View key={section.dateLabel}>
+                      <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
+                        <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
                       </View>
-                    ))}
-                    {sectionIndex < globalSearchSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
-                  </View>
-                )) : (
-                  <EmptyState title="Ничего не найдено" message={`По запросу «${searchQuery}» ничего не найдено.`} />
-                )
-              ) : (
-                scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
-                  <View key={slot.time}>
-                    {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                    <TimeSlotRow
-                      time={slot.time}
-                      endTime={slot.endTime}
-                      events={slot.events}
-                      onEventPress={handleEventPress}
-                      onTogglePlanned={handleTogglePlanned}
-                      hasConflict={hasConflict}
-                    />
-                  </View>
-                )) : (
-                  <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
-                )
-              )}
-            </View>
-          </>
-        ) : (
-          <>
-            {myScheduleSections.length > 0 ? myScheduleSections.map((section, si) => (
-              <View key={section.dateLabel}>
-                <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
-                  <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
-                </View>
-                {section.slots.map((slot, slotI) => (
-                  <View key={slot.time}>
-                    {slotI > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                    <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} showSwipeActions={false} />
-                  </View>
-                ))}
-                {si < myScheduleSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
+                      {section.slots.map((slot, i) => (
+                        <View key={`${section.dateLabel}-${slot.time}`}>
+                          {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                          <TimeSlotRow
+                            time={slot.time}
+                            endTime={slot.endTime}
+                            events={slot.events}
+                            onEventPress={handleEventPress}
+                            onTogglePlanned={handleTogglePlanned}
+                            hasConflict={hasConflict}
+                          />
+                        </View>
+                      ))}
+                      {sectionIndex < globalSearchSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
+                    </View>
+                  )) : (
+                    <EmptyState title="Ничего не найдено" message={`По запросу «${searchQuery}» ничего не найдено.`} />
+                  )
+                ) : (
+                  scheduleTimeSlots.length > 0 ? scheduleTimeSlots.map((slot, i) => (
+                    <View key={slot.time}>
+                      {i > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                      <TimeSlotRow
+                        time={slot.time}
+                        endTime={slot.endTime}
+                        events={slot.events}
+                        onEventPress={handleEventPress}
+                        onTogglePlanned={handleTogglePlanned}
+                        hasConflict={hasConflict}
+                      />
+                    </View>
+                  )) : (
+                    <EmptyState title={searchQuery ? "Ничего не найдено" : "Нет событий"} message={searchQuery ? `По запросу «${searchQuery}» ничего не найдено.` : `Нет событий на этот день${selectedTrack !== "Все" ? ` в категории ${selectedTrack}` : ""}.`} />
+                  )
+                )}
               </View>
-            )) : (
-              <EmptyState title="Нет запланированных событий" message="Нажмите + на карточке события, чтобы добавить его сюда." />
-            )}
-          </>
-        )}
+            </>
+          ) : (
+            <>
+              {myScheduleSections.length > 0 ? myScheduleSections.map((section, si) => (
+                <View key={section.dateLabel}>
+                  <View style={[styles.dateHeader, { borderBottomColor: theme.separator }]}>
+                    <Text style={[styles.dateLabel, { color: theme.text }]}>{section.dateLabel}</Text>
+                  </View>
+                  {section.slots.map((slot, slotI) => (
+                    <View key={slot.time}>
+                      {slotI > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
+                      <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} showSwipeActions={false} />
+                    </View>
+                  ))}
+                  {si < myScheduleSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
+                </View>
+              )) : (
+                <EmptyState title="Нет запланированных событий" message="Нажмите + на карточке события, чтобы добавить его сюда." />
+              )}
+            </>
+          )}
+        </View>
       </ScrollView>
 
       <View style={[styles.bottomSelector, { paddingBottom: Spacing.sm + insets.bottom }]}>

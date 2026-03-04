@@ -24,9 +24,13 @@ export function AppHeader({ selectedSegment, onSelectSegment, topInset = 0 }: Ap
             <Pressable
               key={tab}
               onPress={() => onSelectSegment(i)}
+              className={`app-tab interactive-press${isActive ? " app-tab--active" : ""}`}
               style={[styles.tab, isActive && [styles.activeTab, { backgroundColor: isDark ? "rgba(99,99,102,0.9)" : "#FFFFFF" }]]}
             >
-              <Text style={[styles.tabText, { color: isActive ? theme.text : theme.textSecondary, fontWeight: isActive ? "600" : "400" }]}>
+              <Text
+                className="app-tab-label"
+                style={[styles.tabText, { color: isActive ? theme.text : theme.textSecondary, fontWeight: isActive ? "600" : "400" }]}
+              >
                 {tab}
               </Text>
             </Pressable>
