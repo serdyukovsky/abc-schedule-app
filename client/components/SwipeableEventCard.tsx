@@ -9,6 +9,7 @@ interface SwipeableEventCardProps {
   isPast?: boolean;
   isCurrent?: boolean;
   hasConflict?: boolean;
+  planFlashNonce?: number;
 }
 
 // On web there's no swipe gesture; EventCard with its button is sufficient

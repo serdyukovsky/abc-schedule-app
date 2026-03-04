@@ -225,15 +225,20 @@ body {
 @keyframes cardPlanFlash {
   0% {
     opacity: 0;
-    transform: scale(0.97);
+    background-position: -180% 0;
   }
-  36% {
-    opacity: 0.82;
-    transform: scale(1);
+  14% {
+    opacity: 0.08;
+  }
+  44% {
+    opacity: 0.2;
+  }
+  74% {
+    opacity: 0.14;
   }
   100% {
     opacity: 0;
-    transform: scale(1.01);
+    background-position: 220% 0;
   }
 }
 
@@ -292,9 +297,9 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
   border-radius: inherit;
-  animation: cardPlanFlash 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  background-size: 220% 100%;
+  animation: cardPlanFlash 980ms linear both;
 }
 
 @media (prefers-reduced-motion: reduce) {

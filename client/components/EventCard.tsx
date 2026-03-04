@@ -15,28 +15,22 @@ interface EventCardProps {
   isCurrent?: boolean;
   hasConflict?: boolean;
   showActions?: boolean;
+  planFlashNonce?: number;
 }
 
-export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isCurrent = false, hasConflict = false, showActions = true }: EventCardProps) {
+export function EventCard({
+  event,
+  onPress,
+  onTogglePlanned,
+  isPast = false,
+  isCurrent = false,
+  hasConflict = false,
+  showActions = true,
+  planFlashNonce = 0,
+}: EventCardProps) {
   const { theme } = useTheme();
   const isInactive = hasConflict && !event.isPlanned;
   const cardOpacity = isPast ? 0.5 : isInactive ? 0.85 : 1;
-  const [flashNonce, setFlashNonce] = React.useState(0);
-  const isFirstRenderRef = React.useRef(true);
-  const prevPlannedRef = React.useRef(event.isPlanned);
-
-  React.useEffect(() => {
-    if (isFirstRenderRef.current) {
-      isFirstRenderRef.current = false;
-      prevPlannedRef.current = event.isPlanned;
-      return;
-    }
-
-    if (prevPlannedRef.current !== event.isPlanned) {
-      prevPlannedRef.current = event.isPlanned;
-      setFlashNonce((v) => v + 1);
-    }
-  }, [event.isPlanned]);
 
   return (
     <div
@@ -69,11 +63,13 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
           }}
         />
       ) : null}
-      {flashNonce > 0 ? (
+      {planFlashNonce > 0 ? (
         <div
-          key={`${event.id}-flash-${flashNonce}`}
+          key={`${event.id}-flash-${planFlashNonce}`}
           className="event-card-plan-flash"
-          style={{ background: `radial-gradient(130% 120% at 86% 82%, ${theme.link}55 0%, ${theme.link}18 42%, transparent 76%)` }}
+          style={{
+            backgroundImage: `linear-gradient(102deg, transparent 22%, ${theme.link}14 41%, ${theme.link}30 50%, ${theme.link}14 59%, transparent 78%)`,
+          }}
         />
       ) : null}
       <View style={styles.content}>

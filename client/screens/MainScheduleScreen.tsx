@@ -53,6 +53,7 @@ export default function MainScheduleScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
+  const [planFlashNonceById, setPlanFlashNonceById] = useState<Record<string, number>>({});
   const hasSearchQuery = searchQuery.trim().length > 0;
   const isGlobalSearch = hasSearchQuery;
 
@@ -153,6 +154,13 @@ export default function MainScheduleScreen() {
     setActiveEventId(null);
   }, []);
 
+  const triggerPlanFlash = useCallback((eventId: string) => {
+    setPlanFlashNonceById((prev) => ({
+      ...prev,
+      [eventId]: (prev[eventId] || 0) + 1,
+    }));
+  }, []);
+
   const handleTogglePlanned = useCallback((eventId: string) => {
     const event = events.find((e) => e.id === eventId);
     if (!event) return;
@@ -160,8 +168,9 @@ export default function MainScheduleScreen() {
       const conflict = hasConflict(event);
       if (conflict) { setPendingEvent(event); setConflictingEvent(conflict); setConflictModalVisible(true); return; }
     }
+    triggerPlanFlash(eventId);
     togglePlanned(eventId);
-  }, [events, hasConflict, togglePlanned]);
+  }, [events, hasConflict, togglePlanned, triggerPlanFlash]);
 
 
   return (
@@ -193,6 +202,7 @@ export default function MainScheduleScreen() {
                             onEventPress={handleEventPress}
                             onTogglePlanned={handleTogglePlanned}
                             hasConflict={hasConflict}
+                            planFlashNonceById={planFlashNonceById}
                           />
                         </View>
                       ))}
@@ -212,6 +222,7 @@ export default function MainScheduleScreen() {
                         onEventPress={handleEventPress}
                         onTogglePlanned={handleTogglePlanned}
                         hasConflict={hasConflict}
+                        planFlashNonceById={planFlashNonceById}
                       />
                     </View>
                   )) : (
@@ -230,7 +241,7 @@ export default function MainScheduleScreen() {
                   {section.slots.map((slot, slotI) => (
                     <View key={slot.time}>
                       {slotI > 0 ? <View style={[styles.slotDivider, { backgroundColor: theme.separator }]} /> : null}
-                      <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} showSwipeActions={false} />
+                      <TimeSlotRow time={slot.time} endTime={slot.endTime} events={slot.events} onEventPress={handleEventPress} onTogglePlanned={handleTogglePlanned} hasConflict={hasConflict} showSwipeActions={false} planFlashNonceById={planFlashNonceById} />
                     </View>
                   ))}
                   {si < myScheduleSections.length - 1 ? <View style={[styles.sectionDivider, { backgroundColor: theme.separator }]} /> : null}
@@ -272,8 +283,8 @@ export default function MainScheduleScreen() {
         visible={conflictModalVisible}
         newEvent={pendingEvent}
         conflictingEvent={conflictingEvent}
-        onReplace={() => { if (pendingEvent && conflictingEvent) { togglePlanned(conflictingEvent.id); togglePlanned(pendingEvent.id); } setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
-        onKeepBoth={() => { if (pendingEvent) togglePlanned(pendingEvent.id); setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
+        onReplace={() => { if (pendingEvent && conflictingEvent) { togglePlanned(conflictingEvent.id); triggerPlanFlash(pendingEvent.id); togglePlanned(pendingEvent.id); } setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
+        onKeepBoth={() => { if (pendingEvent) { triggerPlanFlash(pendingEvent.id); togglePlanned(pendingEvent.id); } setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
         onCancel={() => { setConflictModalVisible(false); setPendingEvent(null); setConflictingEvent(null); }}
       />
     </View>

@@ -14,9 +14,19 @@ interface TimeSlotRowProps {
   onTogglePlanned: (eventId: string) => void;
   hasConflict: (event: Event) => Event | null;
   showSwipeActions?: boolean;
+  planFlashNonceById?: Record<string, number>;
 }
 
-export function TimeSlotRow({ time, endTime, events, onEventPress, onTogglePlanned, hasConflict, showSwipeActions = true }: TimeSlotRowProps) {
+export function TimeSlotRow({
+  time,
+  endTime,
+  events,
+  onEventPress,
+  onTogglePlanned,
+  hasConflict,
+  showSwipeActions = true,
+  planFlashNonceById = {},
+}: TimeSlotRowProps) {
   const { theme } = useTheme();
   const now = new Date();
 
@@ -32,10 +42,11 @@ export function TimeSlotRow({ time, endTime, events, onEventPress, onTogglePlann
           const isPast = event.endTime < now;
           const isCurrent = event.startTime <= now && event.endTime > now;
           const conflict = hasConflict(event);
+          const planFlashNonce = planFlashNonceById[event.id] || 0;
           if (showSwipeActions) {
-            return <SwipeableEventCard key={event.id} event={event} onPress={() => onEventPress(event)} onTogglePlanned={() => onTogglePlanned(event.id)} isPast={isPast} isCurrent={isCurrent} hasConflict={!!conflict} />;
+            return <SwipeableEventCard key={event.id} event={event} onPress={() => onEventPress(event)} onTogglePlanned={() => onTogglePlanned(event.id)} isPast={isPast} isCurrent={isCurrent} hasConflict={!!conflict} planFlashNonce={planFlashNonce} />;
           }
-          return <EventCard key={event.id} event={event} onPress={() => onEventPress(event)} onTogglePlanned={() => onTogglePlanned(event.id)} isPast={isPast} isCurrent={isCurrent} hasConflict={!!conflict} showActions={true} />;
+          return <EventCard key={event.id} event={event} onPress={() => onEventPress(event)} onTogglePlanned={() => onTogglePlanned(event.id)} isPast={isPast} isCurrent={isCurrent} hasConflict={!!conflict} showActions={true} planFlashNonce={planFlashNonce} />;
         })}
       </View>
     </View>
