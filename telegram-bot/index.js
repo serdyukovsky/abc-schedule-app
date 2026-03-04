@@ -354,6 +354,12 @@ const openKeyboard = Markup.inlineKeyboard([
   [Markup.button.url("🏔 Открыть расписание", miniAppDeepLink)],
 ]);
 
+// Persistent reply keyboard — always visible at the bottom of the chat
+const menuKeyboard = Markup.keyboard([
+  ["📋 Мой план на сегодня"],
+  [Markup.button.webApp("🏔 Открыть расписание", miniAppDeepLink)],
+]).resize();
+
 // ─── /start ───────────────────────────────────────────────────────────────────
 
 // Always responds instantly — no PocketBase calls here
@@ -368,12 +374,12 @@ bot.start(async (ctx) => {
   );
 });
 
-// "Поехали!" → open mini app
+// "Поехали!" → open mini app + show persistent menu
 bot.action("onboarding_start", async (ctx) => {
   await ctx.answerCbQuery();
   await ctx.reply(
-    "Отлично, поехали! 🚀\n\nЖми кнопку ниже, чтобы открыть расписание:",
-    openKeyboard
+    "Отлично, поехали! 🚀\n\nВнизу — кнопки для быстрого доступа:",
+    menuKeyboard
   );
 });
 
@@ -397,10 +403,12 @@ bot.command("help", async (ctx) => {
 
 // ─── Text fallback ────────────────────────────────────────────────────────────
 
+bot.hears("📋 Мой план на сегодня", handleScheduleCommand);
+
 bot.on("text", async (ctx) => {
   await ctx.reply(
-    "Используй кнопку ниже, чтобы открыть расписание 👇",
-    openKeyboard
+    "Используй кнопки внизу 👇",
+    menuKeyboard
   );
 });
 
