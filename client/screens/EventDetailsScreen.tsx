@@ -54,7 +54,7 @@ export default function EventDetailsScreen() {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
-          <Text style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</Text>
+          <Text style={[styles.trackText, { color: theme.trackBadgeText }]}>{event.track}</Text>
         </View>
 
         <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>

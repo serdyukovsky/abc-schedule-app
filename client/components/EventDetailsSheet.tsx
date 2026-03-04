@@ -69,7 +69,7 @@ export function EventDetailsSheet({
 
           <View style={styles.header}>
             <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
-              <Text style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</Text>
+              <Text style={[styles.trackText, { color: theme.trackBadgeText }]}>{event.track}</Text>
             </View>
             <Pressable onPress={onClose} style={styles.closeButton}>
               <Feather name="x" size={20} color={theme.textSecondary} />

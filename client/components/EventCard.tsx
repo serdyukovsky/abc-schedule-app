@@ -54,8 +54,8 @@ export function EventCard({ event, onPress, onTogglePlanned, isPast = false, isC
       <View style={styles.content}>
         <Pressable onPress={onPress} style={styles.mainTapArea} testID={`event-title-${event.id}`}>
           <View style={styles.topRow}>
-            <View style={[styles.trackBadge, { backgroundColor: theme.backgroundSecondary }]}>
-              <ThemedText style={[styles.trackText, { color: theme.textSecondary }]}>{event.track}</ThemedText>
+            <View style={[styles.trackBadge, { backgroundColor: theme.trackBadge }]}>
+              <ThemedText style={[styles.trackText, { color: theme.trackBadgeText }]}>{event.track}</ThemedText>
             </View>
             {isCurrent ? (
               <View style={styles.liveBadge}>

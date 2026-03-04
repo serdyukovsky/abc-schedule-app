@@ -20,7 +20,8 @@ export const Colors = {
     conflict: "#d20729",
     nowIndicator: "#d20729",
     currentHighlight: "rgba(210, 7, 41, 0.08)",
-    trackBadge: "#F0F0F0",
+    trackBadge: "rgba(210, 7, 41, 0.14)",
+    trackBadgeText: "#b00624",
   },
   dark: {
     text: "#FFFFFF",
@@ -39,7 +40,8 @@ export const Colors = {
     conflict: "#e5243e",
     nowIndicator: "#ff4d66",
     currentHighlight: "rgba(229, 36, 62, 0.12)",
-    trackBadge: "#2C2C2E",
+    trackBadge: "rgba(229, 36, 62, 0.2)",
+    trackBadgeText: "#ff7c92",
   },
 };
 
