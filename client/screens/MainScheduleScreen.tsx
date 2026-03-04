@@ -46,7 +46,7 @@ export default function MainScheduleScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
 
-  // Open event sheet from deep link (e.g. notification button)
+  // Open event sheet or switch tab from deep link / navigation state
   const location = useLocation();
   useEffect(() => {
     const state = location.state as any;
@@ -55,10 +55,18 @@ export default function MainScheduleScreen() {
       window.history.replaceState({}, "");
     }
     if (state?.openMySchedule) {
-      setSelectedSegment(0);
+      setSelectedSegment(1);
       window.history.replaceState({}, "");
     }
   }, [location.state]);
+
+  // Also check Telegram start_param directly (in case navigate state is lost)
+  useEffect(() => {
+    try {
+      const sp = (window as any).Telegram?.WebApp?.initDataUnsafe?.start_param;
+      if (sp === "my_schedule") setSelectedSegment(1);
+    } catch {}
+  }, []);
 
   const isScheduleView = selectedSegment === 0;
   const plannedEvents = getPlannedEvents();

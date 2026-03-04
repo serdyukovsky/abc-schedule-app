@@ -135,8 +135,16 @@ async function checkAndSendReminders() {
     return;
   }
 
-  if (!reminderEvents.length) return;
-  console.log(`[reminders] ${reminderEvents.length} event(s) in T-${REMIND_BEFORE_MIN} window`);
+  if (!reminderEvents.length) {
+    // Log every 5th tick to avoid spam but still have visibility
+    if (!checkAndSendReminders._tick) checkAndSendReminders._tick = 0;
+    checkAndSendReminders._tick++;
+    if (checkAndSendReminders._tick % 5 === 1) {
+      console.log(`[reminders] tick — conf time: ${nowConf.toISOString()} window: ${toPbDate(winStart)} … ${toPbDate(winEnd)} — no events`);
+    }
+    return;
+  }
+  console.log(`[reminders] ${reminderEvents.length} event(s) in T-${REMIND_BEFORE_MIN} window (conf: ${nowConf.toISOString()})`);
 
   for (const event of reminderEvents) {
     let schedules;
