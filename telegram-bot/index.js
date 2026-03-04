@@ -43,7 +43,7 @@ function intEnv(name, fallback) {
 
 // Reminder window: fire reminder when event starts in [REMIND-WINDOW … REMIND+WINDOW] min
 const REMIND_BEFORE_MIN = intEnv("REMIND_BEFORE_MIN", 10);
-const WINDOW_HALF_MIN   = Math.max(0, intEnv("REMINDER_WINDOW_HALF_MIN", 1));
+const WINDOW_HALF_MIN   = Math.max(0, intEnv("REMINDER_WINDOW_HALF_MIN", 2));
 const SCHEDULER_INTERVAL_MS = Math.max(15_000, intEnv("REMINDER_CHECK_EVERY_SEC", 60) * 1000);
 
 // Conference timezone: PocketBase stores times as "conference local" in UTC field.
@@ -118,7 +118,7 @@ async function checkAndSendReminders() {
   if (!await ensureAuth(null)) return;
 
   // Compute the reminder window in conference-local time
-  const nowConf  = new Date(Date.now() + CONF_OFFSET_MS);
+  const nowConf  = confNow();
   const winStart = new Date(nowConf.getTime() + (REMIND_BEFORE_MIN - WINDOW_HALF_MIN) * 60_000);
   const winEnd   = new Date(nowConf.getTime() + (REMIND_BEFORE_MIN + WINDOW_HALF_MIN) * 60_000);
 
@@ -192,6 +192,93 @@ async function checkAndSendReminders() {
         }
       }
     }
+  }
+}
+
+/** Return conference-local "now" as a fake-UTC Date. */
+function confNow() {
+  return new Date(Date.now() + CONF_OFFSET_MS);
+}
+
+// ─── /testreminder command ───────────────────────────────────────────────────
+
+async function handleTestReminder(ctx) {
+  const telegramId = String(ctx.from?.id);
+  if (!await ensureAuth(ctx)) return;
+
+  let users;
+  try {
+    users = await findUsersByTelegramId(telegramId);
+  } catch {
+    return ctx.reply("Не удалось получить данные. Попробуй позже.");
+  }
+
+  const user = pickUser(users);
+  if (!user) {
+    return ctx.reply(
+      "Сначала открой приложение, чтобы завершить вход.\nПосле этого можно тестировать уведомления.",
+      openKeyboard
+    );
+  }
+
+  // Find the user's next planned event (any future event)
+  const now = confNow();
+  let schedules;
+  try {
+    schedules = await pb.collection("user_schedules").getFullList({
+      filter: `user = '${user.id}' && event.startTime >= '${toPbDate(now)}'`,
+      expand: "event,event.speaker",
+      sort: "event.startTime",
+    });
+  } catch (err) {
+    return ctx.reply(`Ошибка запроса расписания: ${err.message}`);
+  }
+
+  if (!schedules.length) {
+    // Try any event today even if already started
+    const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+    try {
+      schedules = await pb.collection("user_schedules").getFullList({
+        filter: `user = '${user.id}' && event.startTime >= '${toPbDate(dayStart)}' && event.startTime < '${toPbDate(dayEnd)}'`,
+        expand: "event,event.speaker",
+        sort: "event.startTime",
+      });
+    } catch {}
+  }
+
+  if (!schedules.length) {
+    return ctx.reply(
+      "У тебя нет запланированных событий. Добавь что-нибудь в приложении, потом попробуй снова.",
+      openKeyboard
+    );
+  }
+
+  const sched = schedules[0];
+  const ev = sched.expand?.event;
+  if (!ev) return ctx.reply("Событие не найдено.");
+
+  const speaker = ev.expand?.speaker;
+  const speakerLine = speaker?.name ? `\n👤 ${esc(speaker.name)}` : "";
+  const eventLink = withBuildTag(`${miniAppBaseLink}?startapp=event_${ev.id}&mode=fullscreen`);
+
+  const text =
+    `🧪 <b>Тестовое уведомление:</b>\n\n` +
+    `<b>${esc(ev.title)}</b>\n` +
+    `📍 ${esc(ev.location)} · ${fmtTime(ev.startTime)}` +
+    speakerLine;
+
+  try {
+    await bot.telegram.sendMessage(telegramId, text, {
+      parse_mode: "HTML",
+      ...Markup.inlineKeyboard([
+        [Markup.button.url("📅 Открыть в расписании", eventLink)],
+      ]),
+    });
+    console.log(`[testreminder] → sent to ${telegramId} for "${ev.title}"`);
+  } catch (err) {
+    console.error(`[testreminder] sendMessage failed:`, err.message);
+    return ctx.reply(`Ошибка отправки: ${err.message}`);
   }
 }
 
@@ -290,11 +377,13 @@ bot.action("onboarding_start", async (ctx) => {
 // ─── Commands ─────────────────────────────────────────────────────────────────
 
 bot.command("schedule", handleScheduleCommand);
+bot.command("testreminder", handleTestReminder);
 
 bot.command("help", async (ctx) => {
   const baseText =
     "<b>ABC Forum — расписание кемпа</b>\n\n" +
     "/schedule — мой план на сегодня\n" +
+    "/testreminder — тест уведомления\n" +
     "/start — открыть приложение\n\n";
 
   await ctx.reply(
@@ -335,8 +424,9 @@ async function start() {
     console.log(`Telegram bot started: @${me.username} (id=${me.id})`);
     try {
       await bot.telegram.setMyCommands([
-        { command: "schedule", description: "Мой план на сегодня" },
-        { command: "help",     description: "Справка" },
+        { command: "schedule",     description: "Мой план на сегодня" },
+        { command: "testreminder", description: "Тест уведомления" },
+        { command: "help",         description: "Справка" },
       ]);
       console.log("Bot commands registered");
     } catch (err) {
@@ -349,6 +439,28 @@ async function start() {
 
   if (await pbAuth()) {
     enableReminderScheduler();
+    // Startup diagnostics
+    try {
+      const now = confNow();
+      const dayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+      const todayEvents = await pb.collection("events").getFullList({
+        filter: `startTime >= '${toPbDate(dayStart)}' && startTime < '${toPbDate(dayEnd)}'`,
+      });
+      const totalSchedules = await pb.collection("user_schedules").getFullList();
+      const totalUsers = await pb.collection("users").getFullList({ fields: "id,telegramId" });
+      const usersWithTgId = totalUsers.filter((u) => u.telegramId);
+      const sentReminders = await pb.collection("sent_reminders").getFullList();
+      console.log(
+        `[diag] Conference time: ${now.toISOString()} | ` +
+        `Today events: ${todayEvents.length} | ` +
+        `User schedules: ${totalSchedules.length} | ` +
+        `Users with telegramId: ${usersWithTgId.length}/${totalUsers.length} | ` +
+        `Sent reminders (total): ${sentReminders.length}`
+      );
+    } catch (err) {
+      console.error("[diag] Startup diagnostics failed:", err.message);
+    }
   } else {
     console.error("[pb] Bot started without PocketBase auth; /start works, DB features unavailable until auth succeeds.");
   }
